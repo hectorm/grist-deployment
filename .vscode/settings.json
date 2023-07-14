@@ -1,0 +1,14 @@
+{
+  "yaml.customTags": [
+    "!Condition sequence",
+    "!Context scalar",
+    "!Enumerate sequence",
+    "!Env scalar",
+    "!Find sequence",
+    "!Format sequence",
+    "!If sequence",
+    "!Index scalar",
+    "!KeyOf scalar",
+    "!Value scalar"
+  ]
+}

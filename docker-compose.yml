@@ -1,0 +1,415 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json
+name: "docs"
+
+# https://hub.docker.com/_/traefik
+x-traefik-image: &traefik-image "docker.io/traefik:2.10"
+# https://hub.docker.com/r/hectorm/proxy
+x-proxy-image: &proxy-image "docker.io/hectorm/proxy:v1"
+# https://hub.docker.com/r/gristlabs/grist
+x-grist-image: &grist-image "docker.io/gristlabs/grist:1.1.2"
+# https://github.com/goauthentik/authentik/pkgs/container/server
+x-authentik-server-image: &authentik-server-image "ghcr.io/goauthentik/server:2023.6"
+# https://github.com/goauthentik/authentik/pkgs/container/proxy
+x-authentik-proxy-image: &authentik-proxy-image "ghcr.io/goauthentik/proxy:2023.6"
+# https://github.com/goauthentik/authentik/pkgs/container/ldap
+x-authentik-ldap-image: &authentik-ldap-image "ghcr.io/goauthentik/ldap:2023.6"
+# https://hub.docker.com/r/minio/minio
+x-minio-image: &minio-image "docker.io/minio/minio:RELEASE.2023-07-11T21-29-34Z"
+# https://hub.docker.com/r/minio/mc
+x-minio-mc-image: &minio-mc-image "docker.io/minio/mc:RELEASE.2023-07-11T23-30-44Z"
+# https://hub.docker.com/_/postgres
+x-postgres-image: &postgres-image "docker.io/postgres:15-bookworm"
+# https://hub.docker.com/_/redis
+x-redis-image: &redis-image "docker.io/redis:7-bookworm"
+
+services:
+
+  traefik:
+    image: *traefik-image
+    restart: "on-failure:10"
+    container_name: "docs-traefik"
+    hostname: "traefik"
+    networks:
+      public:
+      private:
+        aliases:
+          - "${GRIST_DOMAIN:?}"
+          - "${AUTHENTIK_DOMAIN:?}"
+          - "${MINIO_DOMAIN:?}"
+          - "${TRAEFIK_DOMAIN:?}"
+    ports:
+      - "80:80/tcp" # HTTP.
+      - "443:443/tcp" # HTTPS.
+      - "443:443/udp" # HTTPS (QUIC).
+      - "636:636/tcp" # LDAPS.
+      - "127.0.0.1:5432:5432/tcp" # PostgreSQL.
+    volumes:
+      - "./config/traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
+      - "./config/traefik/dynamic/:/etc/traefik/dynamic/:ro"
+      - "./config/traefik/certs/server/:/etc/traefik/certs/:ro"
+      - "traefik-acme:/etc/traefik/acme/"
+    environment:
+      TRAEFIK_TLS_RESOLVER: "${TRAEFIK_TLS_RESOLVER:-}"
+      TRAEFIK_TLS_KEY: "${TRAEFIK_TLS_KEY:-}"
+      TRAEFIK_TLS_CERT: "${TRAEFIK_TLS_CERT:-}"
+      TRAEFIK_MTLS_CERTS: "${TRAEFIK_MTLS_CERTS:-}"
+      GRIST_DOMAIN: "${GRIST_DOMAIN:?}"
+      AUTHENTIK_DOMAIN: "${AUTHENTIK_DOMAIN:?}"
+      MINIO_DOMAIN: "${MINIO_DOMAIN:?}"
+      TRAEFIK_DOMAIN: "${TRAEFIK_DOMAIN:?}"
+      CF_DNS_API_TOKEN: "${CF_DNS_API_TOKEN:-}"
+      CF_ZONE_API_TOKEN: "${CF_ZONE_API_TOKEN:-}"
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck"]
+      start_period: "5m"
+      interval: "10s"
+      timeout: "5s"
+      retries: 2
+
+  proxy:
+    image: *proxy-image
+    restart: "on-failure:10"
+    container_name: "docs-proxy"
+    hostname: "proxy"
+    networks:
+      public:
+      private:
+        aliases:
+          - "github.com"
+          - "raw.githubusercontent.com"
+          - "objects.githubusercontent.com"
+    environment:
+      PROXY_UPSTREAMS_HTTPS: |
+        github.com
+        raw.githubusercontent.com
+        objects.githubusercontent.com
+
+  grist:
+    image: *grist-image
+    restart: "on-failure:10"
+    container_name: "docs-grist"
+    hostname: "grist"
+    networks:
+      - "private"
+    volumes:
+      - "./config/grist/static/custom.css:/grist/static/custom.css:ro"
+      - "./config/authentik/certs/saml-grist-sp/:/certs/saml-grist-sp/:ro"
+      - "grist-data:/persist/"
+    environment:
+      APP_HOME_URL: "https://${GRIST_DOMAIN:?}"
+      APP_DOC_URL: "https://${GRIST_DOMAIN:?}"
+      APP_STATIC_URL: "https://${GRIST_DOMAIN:?}"
+      APP_STATIC_INCLUDE_CUSTOM_CSS: "true"
+      GRIST_DOMAIN: "${GRIST_DOMAIN:?}"
+      GRIST_SINGLE_ORG: "${GRIST_SINGLE_ORG:-}"
+      GRIST_ORG_IN_PATH: "${GRIST_ORG_IN_PATH:-true}"
+      GRIST_DEFAULT_EMAIL: "${GRIST_DEFAULT_EMAIL:?}"
+      GRIST_SUPPORT_EMAIL: "${GRIST_SUPPORT_EMAIL:-support@${GRIST_DOMAIN:?}}"
+      GRIST_SESSION_COOKIE: "${GRIST_SESSION_COOKIE:-grist_session}"
+      GRIST_SESSION_SECRET: "${GRIST_SESSION_SECRET:?}"
+      GRIST_FORCE_LOGIN: "${GRIST_FORCE_LOGIN:-true}"
+      GRIST_SUPPORT_ANON: "${GRIST_SUPPORT_ANON:-false}"
+      GRIST_DEFAULT_PRODUCT: "${GRIST_DEFAULT_PRODUCT:-Free}"
+      GRIST_HIDE_UI_ELEMENTS: "${GRIST_HIDE_UI_ELEMENTS:-helpCenter,billing,templates,multiAccounts,sendToDrive,tutorials}"
+      GRIST_LIST_PUBLIC_SITES: "${GRIST_LIST_PUBLIC_SITES:-false}"
+      GRIST_MAX_UPLOAD_ATTACHMENT_MB: "${GRIST_MAX_UPLOAD_ATTACHMENT_MB:-100}"
+      GRIST_MAX_UPLOAD_IMPORT_MB: "${GRIST_MAX_UPLOAD_IMPORT_MB:-500}"
+      GRIST_PAGE_TITLE_SUFFIX: "${GRIST_PAGE_TITLE_SUFFIX:-_blank}"
+      GRIST_WIDGET_LIST_URL: "${GRIST_WIDGET_LIST_URL:-https://github.com/gristlabs/grist-widget/releases/download/latest/manifest.json}"
+      GRIST_EXPERIMENTAL_PLUGINS: "${GRIST_EXPERIMENTAL_PLUGINS:-0}"
+      GRIST_TELEMETRY_LEVEL: "${GRIST_TELEMETRY_LEVEL:-off}"
+      GRIST_THROTTLE_CPU: "${GRIST_THROTTLE_CPU:-true}"
+      GRIST_SANDBOX_FLAVOR: "${GRIST_SANDBOX_FLAVOR:-gvisor}"
+      PYTHON_VERSION: "${PYTHON_VERSION:-3}"
+      PYTHON_VERSION_ON_CREATION: "${PYTHON_VERSION_ON_CREATION:-3}"
+      GRIST_SAML_SP_HOST: "https://${GRIST_DOMAIN:?}"
+      GRIST_SAML_SP_KEY: "/certs/saml-grist-sp/saml-grist-sp.key"
+      GRIST_SAML_SP_CERT: "/certs/saml-grist-sp/saml-grist-sp.crt"
+      GRIST_SAML_IDP_CERTS: "/certs/saml-grist-sp/saml-idp.crt"
+      GRIST_SAML_IDP_LOGIN: "https://${AUTHENTIK_DOMAIN:?}/application/saml/grist/sso/binding/redirect/"
+      GRIST_SAML_IDP_LOGOUT: "https://${AUTHENTIK_DOMAIN:?}/application/saml/grist/slo/binding/redirect/"
+      GRIST_SAML_IDP_UNENCRYPTED: "1"
+      GRIST_DOCS_MINIO_ENDPOINT: "minio"
+      GRIST_DOCS_MINIO_PORT: "9000"
+      GRIST_DOCS_MINIO_USE_SSL: "0"
+      GRIST_DOCS_MINIO_BUCKET: "grist"
+      GRIST_DOCS_MINIO_ACCESS_KEY: "grist"
+      GRIST_DOCS_MINIO_SECRET_KEY: "${MINIO_GRIST_PASSWORD:?}"
+      TYPEORM_TYPE: "sqlite"
+      TYPEORM_DATABASE: "/persist/home.sqlite3"
+      REDIS_URL: "redis://:${REDIS_GRIST_PASSWORD:?}@redis-grist:6379/1"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      HUGGINGFACE_API_KEY: "${HUGGINGFACE_API_KEY:-}"
+      COMPLETION_MODEL: "${COMPLETION_MODEL:-}"
+      COMPLETION_URL: "${COMPLETION_URL:-}"
+      # Set to "0" to disable certificate validation. Allows Grist to make
+      # requests to itself if the reverse proxy uses a self-signed certificate
+      # during development.
+      NODE_TLS_REJECT_UNAUTHORIZED: "${GRIST_NODE_TLS_REJECT_UNAUTHORIZED:-1}"
+    healthcheck:
+      test: ["CMD", "bash", "-euc", ">/dev/tcp/localhost/8484"]
+      start_period: "5m"
+      interval: "10s"
+      timeout: "5s"
+      retries: 2
+    depends_on:
+      minio:
+        condition: "service_healthy"
+      minio-init:
+        condition: "service_completed_successfully"
+      redis-grist:
+        condition: "service_healthy"
+      proxy:
+        condition: "service_healthy"
+
+  authentik-server:
+    image: *authentik-server-image
+    restart: "on-failure:10"
+    container_name: "docs-authentik-server"
+    hostname: "authentik-server"
+    networks:
+      - "private"
+    volumes: &authentik-volumes
+      - "./config/authentik/blueprints/:/blueprints/custom/:ro"
+      - "./config/authentik/web/dist/custom.css:/web/dist/custom.css:ro"
+      - "./config/authentik/web/dist/custom/:/web/dist/custom/:ro"
+      - "./config/authentik/web/dist/custom/blank.jpg:/web/dist/assets/images/flow_background.jpg:ro"
+    environment: &authentik-environment
+      AUTHENTIK_BOOTSTRAP_EMAIL: "${AUTHENTIK_BOOTSTRAP_EMAIL:?}"
+      AUTHENTIK_BOOTSTRAP_PASSWORD: "${AUTHENTIK_BOOTSTRAP_PASSWORD:?}"
+      AUTHENTIK_BOOTSTRAP_TOKEN: "${AUTHENTIK_BOOTSTRAP_TOKEN:?}"
+      AUTHENTIK_SECRET_KEY: "${AUTHENTIK_SECRET_KEY:?}"
+      AUTHENTIK_EMAIL__HOST: "${AUTHENTIK_EMAIL_HOST:-}"
+      AUTHENTIK_EMAIL__PORT: "${AUTHENTIK_EMAIL_PORT:-465}"
+      AUTHENTIK_EMAIL__USERNAME: "${AUTHENTIK_EMAIL_USERNAME:-}"
+      AUTHENTIK_EMAIL__PASSWORD: "${AUTHENTIK_EMAIL_PASSWORD:-}"
+      AUTHENTIK_EMAIL__USE_TLS: "${AUTHENTIK_EMAIL_USE_TLS:-false}"
+      AUTHENTIK_EMAIL__USE_SSL: "${AUTHENTIK_EMAIL_USE_SSL:-true}"
+      AUTHENTIK_EMAIL__FROM: "${AUTHENTIK_EMAIL_FROM:-${AUTHENTIK_EMAIL_USERNAME:-}}"
+      AUTHENTIK_REDIS__HOST: "redis-authentik"
+      AUTHENTIK_REDIS__PORT: "6379"
+      AUTHENTIK_REDIS__PASSWORD: "${REDIS_AUTHENTIK_PASSWORD:?}"
+      AUTHENTIK_REDIS__DB: "1"
+      AUTHENTIK_POSTGRESQL__HOST: "postgres"
+      AUTHENTIK_POSTGRESQL__PORT: "5432"
+      AUTHENTIK_POSTGRESQL__NAME: "authentik"
+      AUTHENTIK_POSTGRESQL__USER: "authentik"
+      AUTHENTIK_POSTGRESQL__PASSWORD: "${POSTGRES_AUTHENTIK_PASSWORD:?}"
+      AUTHENTIK_DISABLE_UPDATE_CHECK: "true"
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+      AUTHENTIK_DISABLE_STARTUP_ANALYTICS: "true"
+      AUTHENTIK_AVATARS: "initials"
+      GRIST_DOMAIN: "${GRIST_DOMAIN:?}"
+      MINIO_DOMAIN: "${MINIO_DOMAIN:?}"
+      TRAEFIK_DOMAIN: "${TRAEFIK_DOMAIN:?}"
+    command: ["server"]
+    healthcheck:
+      test: ["CMD", "ak", "healthcheck"]
+      start_period: "5m"
+      interval: "10s"
+      timeout: "5s"
+      retries: 2
+    depends_on:
+      postgres:
+        condition: "service_healthy"
+      redis-authentik:
+        condition: "service_healthy"
+
+  authentik-worker:
+    image: *authentik-server-image
+    restart: "on-failure:10"
+    container_name: "docs-authentik-worker"
+    hostname: "authentik-worker"
+    networks:
+      - "private"
+    volumes: *authentik-volumes
+    environment: *authentik-environment
+    command: ["worker"]
+    healthcheck:
+      test: ["CMD", "ak", "healthcheck"]
+      start_period: "5m"
+      interval: "10s"
+      timeout: "5s"
+      retries: 2
+    depends_on:
+      postgres:
+        condition: "service_healthy"
+      redis-authentik:
+        condition: "service_healthy"
+
+  authentik-proxy:
+    image: *authentik-proxy-image
+    restart: "on-failure:10"
+    container_name: "docs-authentik-proxy"
+    hostname: "authentik-proxy"
+    networks:
+      - "private"
+    environment:
+      AUTHENTIK_HOST: "http://authentik-server:9000"
+      AUTHENTIK_HOST_BROWSER: "https://${AUTHENTIK_DOMAIN:?}"
+      AUTHENTIK_TOKEN: "${AUTHENTIK_BOOTSTRAP_TOKEN:?}"
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:9300/outpost.goauthentik.io/ping"]
+      start_period: "5m"
+      interval: "10s"
+      timeout: "5s"
+      retries: 2
+    depends_on:
+      authentik-server:
+        condition: "service_healthy"
+      authentik-worker:
+        condition: "service_healthy"
+
+  authentik-ldap:
+    image: *authentik-ldap-image
+    restart: "on-failure:10"
+    container_name: "docs-authentik-ldap"
+    hostname: "authentik-ldap"
+    networks:
+      - "private"
+    environment:
+      AUTHENTIK_HOST: "http://authentik-server:9000"
+      AUTHENTIK_TOKEN: "${AUTHENTIK_BOOTSTRAP_TOKEN:?}"
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:9300/outpost.goauthentik.io/ping"]
+      start_period: "5m"
+      interval: "10s"
+      timeout: "5s"
+      retries: 2
+    depends_on:
+      authentik-server:
+        condition: "service_healthy"
+      authentik-worker:
+        condition: "service_healthy"
+
+  minio:
+    image: *minio-image
+    restart: "on-failure:10"
+    container_name: "docs-minio"
+    hostname: "minio"
+    networks:
+      - "private"
+    volumes:
+      - "minio-data:/data/"
+    environment:
+      MINIO_ROOT_USER: "minio"
+      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:?}"
+      MINIO_VOLUMES: "/data/"
+      MINIO_BROWSER: "on"
+      MINIO_BROWSER_REDIRECT_URL: "https://${MINIO_DOMAIN:?}/console/"
+    command: ["server", "--address", ":9000", "--console-address", ":9001"]
+    healthcheck:
+      test: ["CMD", "curl", "-sfo", "/dev/null", "http://localhost:9000/minio/health/live"]
+      start_period: "5m"
+      interval: "10s"
+      timeout: "5s"
+      retries: 2
+
+  minio-init:
+    image: *minio-mc-image
+    restart: "on-failure:10"
+    container_name: "docs-minio-init"
+    hostname: "minio-init"
+    networks:
+      - "private"
+    volumes:
+      - "./config/minio/init.sh:/init.sh:ro"
+      - "./config/minio/policies/:/policies/:ro"
+    environment:
+      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:?}"
+      MINIO_GRIST_PASSWORD: "${MINIO_GRIST_PASSWORD:?}"
+    entrypoint: "/init.sh"
+    depends_on:
+      minio:
+        condition: "service_healthy"
+
+  postgres:
+    image: *postgres-image
+    restart: "on-failure:10"
+    container_name: "docs-postgres"
+    hostname: "postgres"
+    networks:
+      - "private"
+    volumes:
+      - "./config/postgres/initdb.d/:/docker-entrypoint-initdb.d/:ro"
+      - "postgres-data:/var/lib/postgresql/data/"
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "${POSTGRES_SUPERUSER_PASSWORD:?}"
+      POSTGRES_AUTHENTIK_PASSWORD: "${POSTGRES_AUTHENTIK_PASSWORD:?}"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-qU", "postgres"]
+      start_period: "5m"
+      interval: "10s"
+      timeout: "5s"
+      retries: 2
+
+  redis-grist:
+    image: *redis-image
+    restart: "on-failure:10"
+    container_name: "docs-redis-grist"
+    hostname: "redis-grist"
+    networks:
+      - "private"
+    volumes:
+      - "./config/redis/redis.conf.sh:/etc/redis/redis.conf.sh:ro"
+      - "redis-grist-data:/data/"
+    environment:
+      REDISCLI_AUTH: "${REDIS_GRIST_PASSWORD:?}"
+    command: ["sh", "-euc", "sh /etc/redis/redis.conf.sh | exec redis-server -"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      start_period: "5m"
+      interval: "10s"
+      timeout: "5s"
+      retries: 2
+
+  redis-authentik:
+    image: *redis-image
+    restart: "on-failure:10"
+    container_name: "docs-redis-authentik"
+    hostname: "redis-authentik"
+    networks:
+      - "private"
+    volumes:
+      - "./config/redis/redis.conf.sh:/etc/redis/redis.conf.sh:ro"
+      - "redis-authentik-data:/data/"
+    environment:
+      REDISCLI_AUTH: "${REDIS_AUTHENTIK_PASSWORD:?}"
+    command: ["sh", "-euc", "sh /etc/redis/redis.conf.sh | exec redis-server -"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      start_period: "5m"
+      interval: "10s"
+      timeout: "5s"
+      retries: 2
+
+volumes:
+
+  traefik-acme:
+    name: "docs-traefik-acme"
+
+  grist-data:
+    name: "docs-grist-data"
+
+  minio-data:
+    name: "docs-minio-data"
+
+  postgres-data:
+    name: "docs-postgres-data"
+
+  redis-grist-data:
+    name: "docs-redis-grist-data"
+
+  redis-authentik-data:
+    name: "docs-redis-authentik-data"
+
+networks:
+
+  public:
+    name: "docs-public"
+    internal: false
+
+  private:
+    name: "docs-private"
+    internal: true

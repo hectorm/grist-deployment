@@ -1,0 +1,110 @@
+# yaml-language-server: $schema=https://version-2023-4.goauthentik.io/blueprints/schema.json
+version: 1
+metadata:
+  name: "Grist configuration"
+  labels:
+    blueprints.goauthentik.io/description: "Grist configuration"
+    blueprints.goauthentik.io/instantiate: "true"
+entries:
+  # Apply "Default - Events Transport & Rules" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "Default - Events Transport & Rules"
+      required: true
+  # Apply "Default - Authentication flow" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "Default - Authentication flow"
+      required: true
+  # Apply "Default - Provider authorization flow (explicit consent)" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "Default - Provider authorization flow (explicit consent)"
+      required: true
+  # Apply "System - SAML Provider - Mappings" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "System - SAML Provider - Mappings"
+      required: true
+  # Apply "Groups configuration" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "Groups configuration"
+      required: true
+  # Apply "SAML IdP certificate" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "SAML IdP certificate"
+      required: true
+  # Apply "SAML Grist SP certificate" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "SAML Grist SP certificate"
+      required: true
+  # Grist provider
+  - id: "grist-provider"
+    identifiers:
+      name: "Grist"
+    model: "authentik_providers_saml.samlprovider"
+    attrs:
+      name: "Grist"
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-explicit-consent]]
+      acs_url: !Format [https://%s/saml/assert, !Env GRIST_DOMAIN]
+      issuer: "authentik"
+      sp_binding: "post"
+      signing_kp: !Find [authentik_crypto.certificatekeypair, [name, SAML IdP certificate]]
+      verification_kp: !Find [authentik_crypto.certificatekeypair, [name, SAML Grist SP certificate]]
+      property_mappings:
+        - !Find [authentik_providers_saml.samlpropertymapping, [managed, goauthentik.io/providers/saml/uid]]
+        - !Find [authentik_providers_saml.samlpropertymapping, [managed, goauthentik.io/providers/saml/username]]
+        - !Find [authentik_providers_saml.samlpropertymapping, [managed, goauthentik.io/providers/saml/ms-windowsaccountname]]
+        - !Find [authentik_providers_saml.samlpropertymapping, [managed, goauthentik.io/providers/saml/groups]]
+        - !Find [authentik_providers_saml.samlpropertymapping, [managed, goauthentik.io/providers/saml/email]]
+        - !Find [authentik_providers_saml.samlpropertymapping, [managed, goauthentik.io/providers/saml/name]]
+        - !Find [authentik_providers_saml.samlpropertymapping, [managed, goauthentik.io/providers/saml/upn]]
+      assertion_valid_not_before: "minutes=-5"
+      assertion_valid_not_on_or_after: "minutes=5"
+      session_valid_not_on_or_after: "minutes=86400"
+      digest_algorithm: "http://www.w3.org/2001/04/xmlenc#sha256"
+      signature_algorithm: "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
+  # Grist application
+  - id: "grist-application"
+    identifiers:
+      name: "Grist"
+    model: "authentik_core.application"
+    attrs:
+      name: "Grist"
+      slug: "grist"
+      provider: !KeyOf grist-provider
+      policy_engine_mode: "any"
+      meta_publisher: "Grist Labs"
+      meta_launch_url: !Format [https://%s, !Env GRIST_DOMAIN]
+      icon: "/static/dist/custom/icons/grist.svg"
+  # Grist application admin group policy binding
+  - identifiers:
+      target: !Find [authentik_core.application, [name, Grist]]
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+    model: "authentik_policies.policybinding"
+    attrs:
+      target: !Find [authentik_core.application, [name, Grist]]
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      enabled: true
+      order: 0
+  # Grist application person group policy binding
+  - identifiers:
+      target: !Find [authentik_core.application, [name, Grist]]
+      group: !Find [authentik_core.group, [name, person]]
+    model: "authentik_policies.policybinding"
+    attrs:
+      target: !Find [authentik_core.application, [name, Grist]]
+      group: !Find [authentik_core.group, [name, person]]
+      enabled: true
+      order: 10

@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=https://version-2023-4.goauthentik.io/blueprints/schema.json
+version: 1
+metadata:
+  name: "Groups configuration"
+  labels:
+    blueprints.goauthentik.io/description: "Groups configuration"
+    blueprints.goauthentik.io/instantiate: "true"
+entries:
+  # Person group
+  - id: "person-group"
+    identifiers:
+      name: "person"
+    model: "authentik_core.group"
+    attrs:
+      name: "person"

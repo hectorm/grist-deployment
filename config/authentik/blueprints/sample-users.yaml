@@ -1,0 +1,93 @@
+# yaml-language-server: $schema=https://version-2023-4.goauthentik.io/blueprints/schema.json
+version: 1
+metadata:
+  name: "Sample users"
+  labels:
+    blueprints.goauthentik.io/description: "Sample users"
+    blueprints.goauthentik.io/instantiate: "false"
+entries:
+  # Apply "Groups configuration" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "Groups configuration"
+      required: true
+  # Sample users
+  - id: "sample-user-alice"
+    identifiers:
+      username: "alice"
+    model: "authentik_core.user"
+    attrs:
+      username: "alice"
+      name: "Alice (Sample)"
+      email: "alice@example.localdomain"
+      password: "password"
+      is_active: true
+      path: "users"
+      groups:
+        - !Find [authentik_core.group, [name, person]]
+  - id: "sample-user-bob"
+    identifiers:
+      username: "bob"
+    model: "authentik_core.user"
+    attrs:
+      username: "bob"
+      name: "Bob (Sample)"
+      email: "bob@example.localdomain"
+      password: "password"
+      is_active: true
+      path: "users"
+      groups:
+        - !Find [authentik_core.group, [name, person]]
+  - id: "sample-user-carol"
+    identifiers:
+      username: "carol"
+    model: "authentik_core.user"
+    attrs:
+      username: "carol"
+      name: "Carol (Sample)"
+      email: "carol@example.localdomain"
+      password: "password"
+      is_active: true
+      path: "users"
+      groups:
+        - !Find [authentik_core.group, [name, person]]
+  - id: "sample-user-charlie"
+    identifiers:
+      username: "charlie"
+    model: "authentik_core.user"
+    attrs:
+      username: "charlie"
+      name: "Charlie (Sample)"
+      email: "charlie@example.localdomain"
+      password: "password"
+      is_active: true
+      path: "users"
+      groups:
+        - !Find [authentik_core.group, [name, person]]
+  - id: "sample-user-david"
+    identifiers:
+      username: "david"
+    model: "authentik_core.user"
+    attrs:
+      username: "david"
+      name: "David (Sample)"
+      email: "david@example.localdomain"
+      password: "password"
+      is_active: true
+      path: "users"
+      groups:
+        - !Find [authentik_core.group, [name, person]]
+  - id: "sample-user-judy"
+    identifiers:
+      username: "judy"
+    model: "authentik_core.user"
+    attrs:
+      username: "judy"
+      name: "Judy (Sample)"
+      email: "judy@example.localdomain"
+      password: "password"
+      is_active: true
+      path: "users"
+      groups:
+        - !Find [authentik_core.group, [name, person]]

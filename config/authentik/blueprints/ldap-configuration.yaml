@@ -1,0 +1,150 @@
+# yaml-language-server: $schema=https://version-2023-4.goauthentik.io/blueprints/schema.json
+version: 1
+metadata:
+  name: "LDAP configuration"
+  labels:
+    blueprints.goauthentik.io/description: "LDAP configuration"
+    blueprints.goauthentik.io/instantiate: "true"
+entries:
+  # Apply "Default - Password change flow" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "Default - Password change flow"
+      required: true
+  # Apply "Groups configuration" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "Groups configuration"
+      required: true
+  # Apply "LDAP certificate" blueprint
+  # - model: "authentik_blueprints.metaapplyblueprint"
+  #   attrs:
+  #     identifiers:
+  #       name: "LDAP certificate"
+  #     required: true
+  # LDAP group
+  - id: "ldap-group"
+    identifiers:
+      name: "ldap"
+    model: "authentik_core.group"
+    attrs:
+      name: "ldap"
+  # LDAP service account
+  - id: "ldap-service-account"
+    identifiers:
+      username: "ldap"
+    model: "authentik_core.user"
+    attrs:
+      username: "ldap"
+      name: "LDAP service account"
+      is_active: true
+      path: "goauthentik.io/service-accounts"
+      attributes:
+        goauthentik.io/user/service-account: true
+        goauthentik.io/user/override-ips: true
+      groups:
+        - !Find [authentik_core.group, [name, ldap]]
+  # LDAP service account app password
+  # - id: "ldap-service-account-app-password"
+  #   identifiers:
+  #     identifier: "ldap-service-account-app-password"
+  #   model: "authentik_core.token"
+  #   attrs:
+  #     identifier: "ldap-service-account-app-password"
+  #     user: !KeyOf ldap-service-account
+  #     intent: "app_password"
+  #     expiring: false
+  #     key: !Env AUTHENTIK_LDAP_SERVICE_ACCOUNT_APP_PASSWORD
+  # LDAP authentication password stage
+  - id: "ldap-authentication-password"
+    identifiers:
+      name: "ldap-authentication-password"
+    model: "authentik_stages_password.passwordstage"
+    attrs:
+      name: "ldap-authentication-password"
+      backends:
+        - "authentik.core.auth.InbuiltBackend"
+        - "authentik.core.auth.TokenBackend"
+        - "authentik.sources.ldap.auth.LDAPBackend"
+      configure_flow: !Find [authentik_flows.flow, [slug, default-password-change]]
+      failed_attempts_before_cancel: 5
+  # LDAP authentication identification stage
+  - id: "ldap-authentication-identification"
+    identifiers:
+      name: "ldap-authentication-identification"
+    model: "authentik_stages_identification.identificationstage"
+    attrs:
+      name: "ldap-authentication-identification"
+      user_fields:
+        - "username"
+        - "email"
+      password_stage: !KeyOf ldap-authentication-password
+      case_insensitive_matching: true
+      show_matched_user: true
+  # LDAP authentication login stage
+  - id: "ldap-authentication-login"
+    identifiers:
+      name: "ldap-authentication-login"
+    model: "authentik_stages_user_login.userloginstage"
+    attrs:
+      name: "ldap-authentication-login"
+      session_duration: "seconds=0"
+      remember_me_offset: "seconds=0"
+  # LDAP authentication flow
+  - id: "ldap-authentication-flow"
+    identifiers:
+      name: "ldap-authentication-flow"
+    model: "authentik_flows.flow"
+    attrs:
+      name: "ldap-authentication-flow"
+      title: "LDAP authentication flow"
+      slug: "ldap-authentication-flow"
+      designation: "authentication"
+      authentication: "none"
+      denied_action: "message_continue"
+      policy_engine_mode: "any"
+  # LDAP authentication flow identification stage binding
+  - model: "authentik_flows.flowstagebinding"
+    identifiers:
+      target: !KeyOf ldap-authentication-flow
+      stage: !KeyOf ldap-authentication-identification
+      order: 10
+      re_evaluate_policies: true
+      invalid_response_action: "retry"
+      policy_engine_mode: "any"
+  # LDAP authentication flow login stage binding
+  - model: "authentik_flows.flowstagebinding"
+    identifiers:
+      target: !KeyOf ldap-authentication-flow
+      stage: !KeyOf ldap-authentication-login
+      order: 30
+      re_evaluate_policies: true
+      invalid_response_action: "retry"
+      policy_engine_mode: "any"
+  # LDAP provider
+  - id: "ldap-provider"
+    identifiers:
+      name: "LDAP"
+    model: "authentik_providers_ldap.ldapprovider"
+    attrs:
+      name: "LDAP"
+      authorization_flow: !KeyOf ldap-authentication-flow
+      search_group: !KeyOf ldap-group
+    # certificate: !Find [authentik_crypto.certificatekeypair, [name, LDAP certificate]]
+      bind_mode: "direct"
+      search_mode: "direct"
+      base_dn: "DC=ldap,DC=goauthentik,DC=io"
+      uid_start_number: 2000
+      gid_start_number: 4000
+  # LDAP application
+  - id: "ldap-application"
+    identifiers:
+      name: "LDAP"
+    model: "authentik_core.application"
+    attrs:
+      name: "LDAP"
+      slug: "ldap"
+      provider: !KeyOf ldap-provider
+      policy_engine_mode: "any"

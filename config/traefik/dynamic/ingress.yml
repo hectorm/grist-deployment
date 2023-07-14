@@ -1,0 +1,174 @@
+# yaml-language-server: $schema=https://json.schemastore.org/traefik-v2-file-provider.json
+tls:
+  options:
+    default:
+      minVersion: "VersionTLS12"
+      # {{ if or ( env "TRAEFIK_TLS_RESOLVER" ) ( env "TRAEFIK_TLS_CERT" ) }}
+      sniStrict: true
+      # {{ end }}
+      # {{ if env "TRAEFIK_MTLS_CERTS" }}
+      clientAuth:
+        clientAuthType: 'RequireAndVerifyClientCert'
+        caFiles:
+          # {{ range $i, $v := env "TRAEFIK_MTLS_CERTS" | splitList "\n" }}
+          - '{{ $v }}'
+          # {{ end }}
+      # {{ end }}
+  # {{ if env "TRAEFIK_TLS_CERT" }}
+  certificates:
+    - keyFile: '{{ env "TRAEFIK_TLS_KEY" }}'
+      certFile: '{{ env "TRAEFIK_TLS_CERT" }}'
+  # {{ end }}
+http:
+  routers:
+    https-redirect:
+      rule: 'PathPrefix(`/`)'
+      entryPoints: ["http"]
+      middlewares: ["https-redirect"]
+      service: "noop@internal"
+    grist:
+      rule: 'Host(`{{ env "GRIST_DOMAIN" }}`)'
+      entryPoints: ["https"]
+      middlewares: ["security-headers", "grist-security-headers"]
+      service: "grist"
+      tls:
+        certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
+    authentik:
+      rule: 'Host(`{{ env "AUTHENTIK_DOMAIN" }}`)'
+      entryPoints: ["https"]
+      middlewares: ["security-headers", "authentik-security-headers"]
+      service: "authentik"
+      tls:
+        certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
+    minio-s3:
+      rule: 'Host(`{{ env "MINIO_DOMAIN" }}`)'
+      entryPoints: ["https"]
+      service: "minio-s3"
+      tls:
+        certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
+    minio-console:
+      rule: 'Host(`{{ env "MINIO_DOMAIN" }}`) && PathPrefix(`/console/`)'
+      entryPoints: ["https"]
+      middlewares: ["forward-auth", "security-headers", "minio-console-security-headers", "strip-prefix"]
+      service: "minio-console"
+      tls:
+        certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
+    traefik:
+      rule: 'Host(`{{ env "TRAEFIK_DOMAIN" }}`)'
+      entryPoints: ["https"]
+      middlewares: ["forward-auth", "security-headers", "traefik-security-headers"]
+      service: "api@internal"
+      tls:
+        certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
+  middlewares:
+    https-redirect:
+      redirectScheme:
+        scheme: "https"
+        permanent: true
+    strip-prefix:
+      stripPrefixRegex:
+        regex: ['\/[^\/]+']
+    forward-auth:
+      forwardAuth:
+        address: "http://authentik-proxy:9000/outpost.goauthentik.io/auth/traefik"
+        trustForwardHeader: true
+        authResponseHeaders:
+          - "X-authentik-username"
+          - "X-authentik-groups"
+          - "X-authentik-email"
+          - "X-authentik-name"
+          - "X-authentik-uid"
+          - "X-authentik-jwt"
+          - "X-authentik-meta-jwks"
+          - "X-authentik-meta-outpost"
+          - "X-authentik-meta-provider"
+          - "X-authentik-meta-app"
+          - "X-authentik-meta-version"
+    security-headers:
+      headers:
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        referrerPolicy: "strict-origin"
+        contentTypeNosniff: true
+        permissionsPolicy: >-
+          accelerometer=(),
+          camera=(),
+          geolocation=(),
+          gyroscope=(),
+          magnetometer=(),
+          microphone=(),
+          midi=(),
+          payment=(),
+          usb=()
+        customResponseHeaders:
+          Server: ""
+          X-Powered-By: ""
+    grist-security-headers:
+      headers:
+        contentSecurityPolicy: >-
+          default-src 'self';
+          script-src 'self' 'unsafe-inline';
+          style-src 'self' 'unsafe-inline';
+          img-src 'self' blob: data:;
+          frame-src 'self' https://gristlabs.github.io;
+    authentik-security-headers:
+      headers:
+        contentSecurityPolicy: >-
+          default-src 'self';
+          script-src 'self' 'unsafe-inline';
+          style-src 'self' 'unsafe-inline';
+          img-src 'self' blob: data:;
+    minio-console-security-headers:
+      headers:
+        contentSecurityPolicy: >-
+          default-src 'self';
+          script-src 'self' 'unsafe-inline' https://unpkg.com;
+          style-src 'self' 'unsafe-inline' https://unpkg.com;
+          img-src 'self' blob: data:;
+          connect-src 'self' https://unpkg.com;
+    traefik-security-headers:
+      headers:
+        contentSecurityPolicy: >-
+          default-src 'self';
+          script-src 'self' 'unsafe-inline';
+          style-src 'self' 'unsafe-inline';
+          img-src 'self' blob: data:;
+  services:
+    grist:
+      loadBalancer:
+        servers:
+          - url: "http://grist:8484"
+    authentik:
+      loadBalancer:
+        servers:
+          - url: "http://authentik-server:9000"
+    minio-s3:
+      loadBalancer:
+        servers:
+          - url: "http://minio:9000"
+    minio-console:
+      loadBalancer:
+        servers:
+          - url: "http://minio:9001"
+tcp:
+  routers:
+    ldaps:
+      rule: 'HostSNI(`{{ env "AUTHENTIK_DOMAIN" }}`)'
+      entryPoints: ["ldaps"]
+      service: "ldap"
+      tls:
+        certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
+    postgres:
+      rule: 'HostSNI(`*`)'
+      entryPoints: ["postgres"]
+      service: "postgres"
+  services:
+    ldap:
+      loadBalancer:
+        servers:
+          - address: "authentik-ldap:3389"
+    postgres:
+      loadBalancer:
+        servers:
+          - address: "postgres:5432"

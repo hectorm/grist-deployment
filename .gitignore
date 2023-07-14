@@ -1,0 +1,9 @@
+.env
+
+/config/traefik/certs/*/*
+!/config/traefik/certs/*/.gitkeep
+
+/config/authentik/certs/*/*
+!/config/authentik/certs/*/.gitkeep
+
+/config/authentik/blueprints/*-certificate.yaml

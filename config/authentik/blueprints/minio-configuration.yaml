@@ -1,0 +1,87 @@
+# yaml-language-server: $schema=https://version-2023-4.goauthentik.io/blueprints/schema.json
+version: 1
+metadata:
+  name: "MinIO configuration"
+  labels:
+    blueprints.goauthentik.io/description: "MinIO configuration"
+    blueprints.goauthentik.io/instantiate: "true"
+entries:
+  # Apply "Default - Events Transport & Rules" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "Default - Events Transport & Rules"
+      required: true
+  # Apply "Default - Authentication flow" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "Default - Authentication flow"
+      required: true
+  # Apply "Default - Provider authorization flow (explicit consent)" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "Default - Provider authorization flow (explicit consent)"
+      required: true
+  # Apply "System - Proxy Provider - Scopes" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "System - Proxy Provider - Scopes"
+      required: true
+  # Apply "System - OAuth2 Provider - Scopes" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "System - OAuth2 Provider - Scopes"
+      required: true
+  # Apply "Groups configuration" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "Groups configuration"
+      required: true
+  # MinIO provider
+  - id: "minio-provider"
+    identifiers:
+      name: "MinIO"
+    model: "authentik_providers_proxy.proxyprovider"
+    attrs:
+      name: "MinIO"
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-explicit-consent]]
+      mode: "forward_single"
+      external_host: !Format [https://%s/console/, !Env MINIO_DOMAIN]
+      access_token_validity: "hours=24"
+      refresh_token_validity: "days=30"
+      intercept_header_auth: true
+      internal_host_ssl_validation: true
+      property_mappings:
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/proxy/scope-proxy]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+  # MinIO application
+  - id: "minio-application"
+    identifiers:
+      name: "MinIO"
+    model: "authentik_core.application"
+    attrs:
+      name: "MinIO"
+      slug: "minio"
+      provider: !KeyOf minio-provider
+      policy_engine_mode: "any"
+      meta_publisher: "MinIO, Inc."
+      meta_launch_url: !Format [https://%s/console/, !Env MINIO_DOMAIN]
+      icon: "/static/dist/custom/icons/minio.svg"
+  # MinIO application admin group policy binding
+  - identifiers:
+      target: !Find [authentik_core.application, [name, MinIO]]
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+    model: "authentik_policies.policybinding"
+    attrs:
+      target: !Find [authentik_core.application, [name, MinIO]]
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      enabled: true
+      order: 0
