@@ -153,10 +153,10 @@ http:
           - url: "http://minio:9001"
 tcp:
   routers:
-    ldaps:
+    authentik-ldap:
       rule: 'HostSNI(`{{ env "AUTHENTIK_DOMAIN" }}`)'
       entryPoints: ["ldaps"]
-      service: "ldap"
+      service: "authentik-ldap"
       tls:
         certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
     postgres:
@@ -164,7 +164,7 @@ tcp:
       entryPoints: ["postgres"]
       service: "postgres"
   services:
-    ldap:
+    authentik-ldap:
       loadBalancer:
         servers:
           - address: "authentik-ldap:3389"
