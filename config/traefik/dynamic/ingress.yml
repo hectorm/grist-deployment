@@ -8,7 +8,7 @@ tls:
       # {{ end }}
       # {{ if env "TRAEFIK_MTLS_CERTS" }}
       clientAuth:
-        clientAuthType: 'RequireAndVerifyClientCert'
+        clientAuthType: "RequireAndVerifyClientCert"
         caFiles:
           # {{ range $i, $v := env "TRAEFIK_MTLS_CERTS" | splitList "\n" }}
           - '{{ $v }}'
