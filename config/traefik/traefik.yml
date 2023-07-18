@@ -17,7 +17,6 @@ entryPoints:
 providers:
   file:
     directory: "/etc/traefik/dynamic/"
-    watch: true
 certificatesResolvers:
   acme-staging-http-01:
     acme:
