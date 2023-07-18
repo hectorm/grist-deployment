@@ -49,7 +49,7 @@ http:
     minio-console:
       rule: 'Host(`{{ env "MINIO_DOMAIN" }}`) && PathPrefix(`/console/`)'
       entryPoints: ["https"]
-      middlewares: ["forward-auth", "security-headers", "minio-console-security-headers", "strip-prefix"]
+      middlewares: ["strip-prefix", "forward-auth", "security-headers", "minio-console-security-headers"]
       service: "minio-console"
       tls:
         certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
