@@ -29,14 +29,14 @@ http:
     grist:
       rule: 'Host(`{{ env "GRIST_DOMAIN" }}`)'
       entryPoints: ["https"]
-      middlewares: ["security-headers", "grist-security-headers"]
+      middlewares: ["compress", "security-headers", "grist-security-headers"]
       service: "grist"
       tls:
         certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
     authentik:
       rule: 'Host(`{{ env "AUTHENTIK_DOMAIN" }}`)'
       entryPoints: ["https"]
-      middlewares: ["security-headers", "authentik-security-headers"]
+      middlewares: ["compress", "security-headers", "authentik-security-headers"]
       service: "authentik"
       tls:
         certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
@@ -49,14 +49,14 @@ http:
     minio-console:
       rule: 'Host(`{{ env "MINIO_DOMAIN" }}`) && PathPrefix(`/console/`)'
       entryPoints: ["https"]
-      middlewares: ["strip-prefix", "forward-auth", "security-headers", "minio-console-security-headers"]
+      middlewares: ["compress", "strip-prefix", "forward-auth", "security-headers", "minio-console-security-headers"]
       service: "minio-console"
       tls:
         certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
     traefik:
       rule: 'Host(`{{ env "TRAEFIK_DOMAIN" }}`)'
       entryPoints: ["https"]
-      middlewares: ["forward-auth", "security-headers", "traefik-security-headers"]
+      middlewares: ["compress", "forward-auth", "security-headers", "traefik-security-headers"]
       service: "api@internal"
       tls:
         certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
@@ -65,6 +65,41 @@ http:
       redirectScheme:
         scheme: "https"
         permanent: true
+    compress:
+      compress:
+        minResponseBodyBytes: 1024
+        excludedContentTypes:
+          - "application/gzip"
+          - "application/pdf"
+          - "application/vnd.oasis.opendocument.presentation"
+          - "application/vnd.oasis.opendocument.spreadsheet"
+          - "application/vnd.oasis.opendocument.text"
+          - "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+          - "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          - "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          - "application/x-bzip2"
+          - "application/x-xz"
+          - "application/zip"
+          - "application/zlib"
+          - "application/zstd"
+          - "audio/aac"
+          - "audio/mpeg"
+          - "audio/ogg"
+          - "audio/opus"
+          - "audio/webm"
+          - "font/woff"
+          - "font/woff2"
+          - "image/apng"
+          - "image/avif"
+          - "image/gif"
+          - "image/jpeg"
+          - "image/png"
+          - "image/vnd.microsoft.icon"
+          - "image/webp"
+          - "video/mp4"
+          - "video/mpeg"
+          - "video/ogg"
+          - "video/webm"
     strip-prefix:
       stripPrefixRegex:
         regex: ['\/[^\/]+']
