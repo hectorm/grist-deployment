@@ -50,5 +50,6 @@ certificatesResolvers:
       dnsChallenge: { provider: "cloudflare" }
 api:
   dashboard: true
+  disableDashboardAd: true
 ping: { }
 accessLog: { }
