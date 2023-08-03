@@ -20,7 +20,7 @@ entries:
     attrs:
       username: "alice"
       name: "Alice (Sample)"
-      email: "alice@example.localdomain"
+      email: "alice@example.localhost"
       password: "password"
       is_active: true
       path: "users"
@@ -33,7 +33,7 @@ entries:
     attrs:
       username: "bob"
       name: "Bob (Sample)"
-      email: "bob@example.localdomain"
+      email: "bob@example.localhost"
       password: "password"
       is_active: true
       path: "users"
@@ -46,7 +46,7 @@ entries:
     attrs:
       username: "carol"
       name: "Carol (Sample)"
-      email: "carol@example.localdomain"
+      email: "carol@example.localhost"
       password: "password"
       is_active: true
       path: "users"
@@ -59,7 +59,7 @@ entries:
     attrs:
       username: "charlie"
       name: "Charlie (Sample)"
-      email: "charlie@example.localdomain"
+      email: "charlie@example.localhost"
       password: "password"
       is_active: true
       path: "users"
@@ -72,7 +72,7 @@ entries:
     attrs:
       username: "david"
       name: "David (Sample)"
-      email: "david@example.localdomain"
+      email: "david@example.localhost"
       password: "password"
       is_active: true
       path: "users"
@@ -85,7 +85,7 @@ entries:
     attrs:
       username: "judy"
       name: "Judy (Sample)"
-      email: "judy@example.localdomain"
+      email: "judy@example.localhost"
       password: "password"
       is_active: true
       path: "users"

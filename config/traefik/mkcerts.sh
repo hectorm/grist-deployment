@@ -30,10 +30,10 @@ export LC_ALL='C'
 	SERVER_CRT_FULLCHAIN="${CERTS_DIR:?}"/server/fullchain.crt
 	SERVER_CRT_SUBJ='/CN=Docs server'
 	SERVER_CRT_SAN=$(printf '%s\n' \
-		'DNS:traefik.example.localdomain' \
-		'DNS:grist.example.localdomain' \
-		'DNS:idp.example.localdomain' \
-		'DNS:minio.example.localdomain' \
+		'DNS:traefik.example.localhost' \
+		'DNS:grist.example.localhost' \
+		'DNS:idp.example.localhost' \
+		'DNS:minio.example.localhost' \
 	| paste -sd, -)
 	SERVER_CRT_VALIDITY_DAYS='7300'
 	SERVER_CRT_RENOVATION_DAYS='30'
