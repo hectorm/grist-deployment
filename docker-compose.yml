@@ -138,6 +138,7 @@ services:
       TYPEORM_TYPE: "sqlite"
       TYPEORM_DATABASE: "/persist/home.sqlite3"
       REDIS_URL: "redis://:${REDIS_GRIST_PASSWORD:?}@redis-grist:6379/1"
+      GRIST_FORMULA_ASSISTANT: "${GRIST_FORMULA_ASSISTANT:-0}"
       OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
       HUGGINGFACE_API_KEY: "${HUGGINGFACE_API_KEY:-}"
       COMPLETION_MODEL: "${COMPLETION_MODEL:-}"
