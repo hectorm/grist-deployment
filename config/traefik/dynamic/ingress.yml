@@ -93,6 +93,7 @@ http:
           - "image/avif"
           - "image/gif"
           - "image/jpeg"
+          - "image/jxl"
           - "image/png"
           - "image/vnd.microsoft.icon"
           - "image/webp"
