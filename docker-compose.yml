@@ -8,11 +8,11 @@ x-proxy-image: &proxy-image "docker.io/hectorm/proxy:v1"
 # https://hub.docker.com/r/gristlabs/grist
 x-grist-image: &grist-image "docker.io/gristlabs/grist:1.1.4"
 # https://github.com/goauthentik/authentik/pkgs/container/server
-x-authentik-server-image: &authentik-server-image "ghcr.io/goauthentik/server:2023.6"
+x-authentik-server-image: &authentik-server-image "ghcr.io/goauthentik/server:2023.8"
 # https://github.com/goauthentik/authentik/pkgs/container/proxy
-x-authentik-proxy-image: &authentik-proxy-image "ghcr.io/goauthentik/proxy:2023.6"
+x-authentik-proxy-image: &authentik-proxy-image "ghcr.io/goauthentik/proxy:2023.8"
 # https://github.com/goauthentik/authentik/pkgs/container/ldap
-x-authentik-ldap-image: &authentik-ldap-image "ghcr.io/goauthentik/ldap:2023.6"
+x-authentik-ldap-image: &authentik-ldap-image "ghcr.io/goauthentik/ldap:2023.8"
 # https://hub.docker.com/r/minio/minio
 x-minio-image: &minio-image "docker.io/minio/minio:RELEASE.2023-08-23T10-07-06Z"
 # https://hub.docker.com/r/minio/mc
@@ -253,6 +253,10 @@ services:
       AUTHENTIK_HOST: "http://authentik-server:9000"
       AUTHENTIK_HOST_BROWSER: "https://${AUTHENTIK_DOMAIN:?}"
       AUTHENTIK_TOKEN: "${AUTHENTIK_BOOTSTRAP_TOKEN:?}"
+      AUTHENTIK_REDIS__HOST: "redis-authentik"
+      AUTHENTIK_REDIS__PORT: "6379"
+      AUTHENTIK_REDIS__PASSWORD: "${REDIS_AUTHENTIK_PASSWORD:?}"
+      AUTHENTIK_REDIS__DB: "1"
     healthcheck:
       test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:9300/outpost.goauthentik.io/ping"]
       start_period: "5m"
@@ -275,6 +279,10 @@ services:
     environment:
       AUTHENTIK_HOST: "http://authentik-server:9000"
       AUTHENTIK_TOKEN: "${AUTHENTIK_BOOTSTRAP_TOKEN:?}"
+      AUTHENTIK_REDIS__HOST: "redis-authentik"
+      AUTHENTIK_REDIS__PORT: "6379"
+      AUTHENTIK_REDIS__PASSWORD: "${REDIS_AUTHENTIK_PASSWORD:?}"
+      AUTHENTIK_REDIS__DB: "1"
     healthcheck:
       test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:9300/outpost.goauthentik.io/ping"]
       start_period: "5m"
