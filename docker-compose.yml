@@ -14,7 +14,7 @@ x-authentik-proxy-image: &authentik-proxy-image "ghcr.io/goauthentik/proxy:2023.
 # https://github.com/goauthentik/authentik/pkgs/container/ldap
 x-authentik-ldap-image: &authentik-ldap-image "ghcr.io/goauthentik/ldap:2023.10"
 # https://hub.docker.com/r/minio/minio
-x-minio-image: &minio-image "docker.io/minio/minio:RELEASE.2023-10-07T15-07-38Z"
+x-minio-image: &minio-image "docker.io/minio/minio:RELEASE.2023-11-01T18-37-25Z"
 # https://hub.docker.com/r/minio/mc
 x-minio-mc-image: &minio-mc-image "docker.io/minio/mc:RELEASE.2023-10-04T06-52-56Z"
 # https://hub.docker.com/_/postgres
@@ -313,7 +313,7 @@ services:
       MINIO_BROWSER_REDIRECT_URL: "https://${MINIO_DOMAIN:?}/console/"
     command: ["server", "--address", ":9000", "--console-address", ":9001"]
     healthcheck:
-      test: ["CMD", "curl", "-sfo", "/dev/null", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "mc", "ready", "local"]
       start_period: "5m"
       interval: "10s"
       timeout: "5s"
