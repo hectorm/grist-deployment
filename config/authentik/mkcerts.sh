@@ -16,7 +16,7 @@ export LC_ALL='C'
 	CA_CSR="${CERTS_DIR:?}"/ca/ca.csr
 	CA_SRL="${CERTS_DIR:?}"/ca/ca.srl
 	CA_CRT="${CERTS_DIR:?}"/ca/ca.crt
-	CA_CRT_CNF="${CERTS_DIR:?}/ca/ca.cnf"
+	CA_CRT_CNF="${CERTS_DIR:?}"/ca/ca.cnf
 	CA_CRT_BLUEPRINT="${BLUEPRINTS_DIR:?}"/authentik-ca-certificate.yaml
 	CA_CRT_SUBJ='/CN=authentik CA'
 	CA_CRT_VALIDITY_DAYS='7300'
