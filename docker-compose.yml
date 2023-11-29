@@ -14,7 +14,7 @@ x-authentik-proxy-image: &authentik-proxy-image "ghcr.io/goauthentik/proxy:2023.
 # https://github.com/goauthentik/authentik/pkgs/container/ldap
 x-authentik-ldap-image: &authentik-ldap-image "ghcr.io/goauthentik/ldap:2023.10"
 # https://hub.docker.com/r/minio/minio
-x-minio-image: &minio-image "docker.io/minio/minio:RELEASE.2023-11-01T18-37-25Z"
+x-minio-image: &minio-image "docker.io/minio/minio:RELEASE.2023-11-20T22-40-07Z"
 # https://hub.docker.com/r/minio/mc
 x-minio-mc-image: &minio-mc-image "docker.io/minio/mc:RELEASE.2023-10-30T18-43-32Z"
 # https://hub.docker.com/_/postgres
