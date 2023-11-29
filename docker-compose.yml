@@ -17,6 +17,10 @@ x-authentik-ldap-image: &authentik-ldap-image "ghcr.io/goauthentik/ldap:2023.10"
 x-minio-image: &minio-image "docker.io/minio/minio:RELEASE.2023-11-20T22-40-07Z"
 # https://hub.docker.com/r/minio/mc
 x-minio-mc-image: &minio-mc-image "docker.io/minio/mc:RELEASE.2023-11-20T16-30-59Z"
+# https://hub.docker.com/r/grafana/grafana
+x-grafana-image: &grafana-image "docker.io/grafana/grafana:10.2.2"
+# https://hub.docker.com/r/prom/prometheus
+x-prometheus-image: &prometheus-image "docker.io/prom/prometheus:v2.48.0"
 # https://hub.docker.com/_/postgres
 x-postgres-image: &postgres-image "docker.io/postgres:16-bookworm"
 # https://hub.docker.com/_/redis
@@ -36,6 +40,8 @@ services:
           - "${GRIST_DOMAIN:?}"
           - "${AUTHENTIK_DOMAIN:?}"
           - "${MINIO_DOMAIN:?}"
+          - "${GRAFANA_DOMAIN:?}"
+          - "${PROMETHEUS_DOMAIN:?}"
           - "${TRAEFIK_DOMAIN:?}"
     ports:
       - "80:80/tcp" # HTTP.
@@ -56,6 +62,8 @@ services:
       GRIST_DOMAIN: "${GRIST_DOMAIN:?}"
       AUTHENTIK_DOMAIN: "${AUTHENTIK_DOMAIN:?}"
       MINIO_DOMAIN: "${MINIO_DOMAIN:?}"
+      GRAFANA_DOMAIN: "${GRAFANA_DOMAIN:?}"
+      PROMETHEUS_DOMAIN: "${PROMETHEUS_DOMAIN:?}"
       TRAEFIK_DOMAIN: "${TRAEFIK_DOMAIN:?}"
       CF_DNS_API_TOKEN: "${CF_DNS_API_TOKEN:-}"
       CF_ZONE_API_TOKEN: "${CF_ZONE_API_TOKEN:-}"
@@ -78,11 +86,13 @@ services:
           - "github.com"
           - "raw.githubusercontent.com"
           - "objects.githubusercontent.com"
+          - "grafana.com"
     environment:
       PROXY_UPSTREAMS_HTTPS: |
         github.com
         raw.githubusercontent.com
         objects.githubusercontent.com
+        grafana.com
 
   grist:
     image: *grist-image
@@ -207,6 +217,9 @@ services:
       AUTHENTIK_AVATARS: "initials"
       GRIST_DOMAIN: "${GRIST_DOMAIN:?}"
       MINIO_DOMAIN: "${MINIO_DOMAIN:?}"
+      GRAFANA_DOMAIN: "${GRAFANA_DOMAIN:?}"
+      GRAFANA_OAUTH_CLIENT_SECRET: "${GRAFANA_OAUTH_CLIENT_SECRET:?}"
+      PROMETHEUS_DOMAIN: "${PROMETHEUS_DOMAIN:?}"
       TRAEFIK_DOMAIN: "${TRAEFIK_DOMAIN:?}"
     command: ["server"]
     healthcheck:
@@ -311,6 +324,9 @@ services:
       MINIO_VOLUMES: "/data/"
       MINIO_BROWSER: "on"
       MINIO_BROWSER_REDIRECT_URL: "https://${MINIO_DOMAIN:?}/console/"
+      MINIO_PROMETHEUS_URL: "http://prometheus:9090"
+      MINIO_PROMETHEUS_JOB_ID: "minio"
+      MINIO_PROMETHEUS_AUTH_TYPE: "public"
     command: ["server", "--address", ":9000", "--console-address", ":9001"]
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
@@ -337,6 +353,78 @@ services:
       minio:
         condition: "service_healthy"
 
+  grafana:
+    image: *grafana-image
+    restart: "on-failure:10"
+    container_name: "docs-grafana"
+    hostname: "grafana"
+    networks:
+      - "private"
+    volumes:
+      - "./config/grafana/provisioning/:/etc/grafana/provisioning/:ro"
+      - "grafana-data:/var/lib/grafana/"
+    environment:
+      GF_SERVER_ROOT_URL: "https://${GRAFANA_DOMAIN:?}"
+      GF_DATABASE_TYPE: "postgres"
+      GF_DATABASE_HOST: "postgres"
+      GF_DATABASE_NAME: "grafana"
+      GF_DATABASE_USER: "grafana"
+      GF_DATABASE_PASSWORD: "${POSTGRES_GRAFANA_PASSWORD:?}"
+      GF_SECURITY_ADMIN_USER: "admin"
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:?}"
+      GF_SECURITY_SECRET_KEY: "${GRAFANA_SECRET_KEY:?}"
+      GF_SECURITY_COOKIE_SECURE: "true"
+      GF_SECURITY_DISABLE_GRAVATAR: "true"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_USERS_ALLOW_ORG_CREATE: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_AUTH_BASIC_ENABLED: "false"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
+      GF_AUTH_GENERIC_OAUTH_AUTO_LOGIN: "true"
+      GF_AUTH_GENERIC_OAUTH_NAME: "authentik"
+      GF_AUTH_GENERIC_OAUTH_ICON: "signin"
+      GF_AUTH_GENERIC_OAUTH_CLIENT_ID: "grafana"
+      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: "${GRAFANA_OAUTH_CLIENT_SECRET:?}"
+      GF_AUTH_GENERIC_OAUTH_SCOPES: "openid email profile"
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: "https://${AUTHENTIK_DOMAIN:?}/application/o/authorize/"
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "http://authentik-server:9000/application/o/token/"
+      GF_AUTH_GENERIC_OAUTH_API_URL: "http://authentik-server:9000/application/o/userinfo/"
+      GF_AUTH_SIGNOUT_REDIRECT_URL: "https://${AUTHENTIK_DOMAIN:?}/application/o/grafana/end-session/"
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: "contains(groups[*], 'authentik Admins') && 'GrafanaAdmin'"
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_STRICT: "true"
+      GF_AUTH_GENERIC_OAUTH_ALLOW_ASSIGN_GRAFANA_ADMIN: "true"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:3000/api/health"]
+      start_period: "5m"
+      interval: "10s"
+      timeout: "5s"
+      retries: 2
+    depends_on:
+      postgres:
+        condition: "service_healthy"
+      proxy:
+        condition: "service_healthy"
+
+  prometheus:
+    image: *prometheus-image
+    restart: "on-failure:10"
+    container_name: "docs-prometheus"
+    hostname: "prometheus"
+    networks:
+      - "private"
+    volumes:
+      - "./config/prometheus/:/etc/prometheus/:ro"
+      - "prometheus-data:/prometheus/"
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:9090/-/healthy"]
+      start_period: "5m"
+      interval: "10s"
+      timeout: "5s"
+      retries: 2
+
   postgres:
     image: *postgres-image
     restart: "on-failure:10"
@@ -351,6 +439,7 @@ services:
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "${POSTGRES_SUPERUSER_PASSWORD:?}"
       POSTGRES_AUTHENTIK_PASSWORD: "${POSTGRES_AUTHENTIK_PASSWORD:?}"
+      POSTGRES_GRAFANA_PASSWORD: "${POSTGRES_GRAFANA_PASSWORD:?}"
     healthcheck:
       test: ["CMD", "pg_isready", "-qU", "postgres"]
       start_period: "5m"
@@ -408,6 +497,12 @@ volumes:
 
   minio-data:
     name: "docs-minio-data"
+
+  grafana-data:
+    name: "docs-grafana-data"
+
+  prometheus-data:
+    name: "docs-prometheus-data"
 
   postgres-data:
     name: "docs-postgres-data"

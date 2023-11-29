@@ -1,0 +1,84 @@
+# yaml-language-server: $schema=https://version-2023-4.goauthentik.io/blueprints/schema.json
+version: 1
+metadata:
+  name: "Grafana configuration"
+  labels:
+    blueprints.goauthentik.io/description: "Grafana configuration"
+    blueprints.goauthentik.io/instantiate: "true"
+entries:
+  # Apply "Default - Events Transport & Rules" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "Default - Events Transport & Rules"
+      required: true
+  # Apply "Default - Authentication flow" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "Default - Authentication flow"
+      required: true
+  # Apply "Default - Provider authorization flow (explicit consent)" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "Default - Provider authorization flow (explicit consent)"
+      required: true
+  # Apply "System - OAuth2 Provider - Scopes" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "System - OAuth2 Provider - Scopes"
+      required: true
+  # Apply "Groups configuration" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "Groups configuration"
+      required: true
+  # Grafana provider
+  - id: "grafana-provider"
+    identifiers:
+      name: "Grafana"
+    model: "authentik_providers_oauth2.oauth2provider"
+    attrs:
+      name: "Grafana"
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-explicit-consent]]
+      client_type: "confidential"
+      client_id: "grafana"
+      client_secret: !Env GRAFANA_OAUTH_CLIENT_SECRET
+      redirect_uris: !Format [https://%s/.*, !Env GRAFANA_DOMAIN]
+      access_code_validity: "minutes=1"
+      access_token_validity: "minutes=5"
+      refresh_token_validity: "days=30"
+      property_mappings:
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+      sub_mode: "hashed_user_id"
+      include_claims_in_id_token: true
+      issuer_mode: "per_provider"
+  # Grafana application
+  - id: "grafana-application"
+    identifiers:
+      name: "Grafana"
+    model: "authentik_core.application"
+    attrs:
+      name: "Grafana"
+      slug: "grafana"
+      provider: !KeyOf grafana-provider
+      policy_engine_mode: "any"
+      meta_publisher: "Grafana Labs"
+      meta_launch_url: !Format [https://%s, !Env GRAFANA_DOMAIN]
+      icon: "/static/dist/custom/icons/grafana.svg"
+  # Grafana application admin group policy binding
+  - identifiers:
+      target: !Find [authentik_core.application, [name, Grafana]]
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+    model: "authentik_policies.policybinding"
+    attrs:
+      target: !Find [authentik_core.application, [name, Grafana]]
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      enabled: true
+      order: 0

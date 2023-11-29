@@ -1,0 +1,40 @@
+global:
+  scrape_interval: "15s"
+  scrape_timeout: "15s"
+
+scrape_configs:
+  - job_name: "traefik"
+    metrics_path: "/metrics"
+    scheme: "http"
+    static_configs:
+      - targets: ["traefik:8080"]
+  - job_name: "authentik-server"
+    metrics_path: "/metrics"
+    scheme: "http"
+    static_configs:
+      - targets: ["authentik-server:9300"]
+  - job_name: "authentik-proxy"
+    metrics_path: "/metrics"
+    scheme: "http"
+    static_configs:
+      - targets: ["authentik-proxy:9300"]
+  - job_name: "authentik-ldap"
+    metrics_path: "/metrics"
+    scheme: "http"
+    static_configs:
+      - targets: ["authentik-ldap:9300"]
+  - job_name: "minio"
+    metrics_path: "/minio/v2/metrics/cluster"
+    scheme: "http"
+    static_configs:
+      - targets: ["minio:9000"]
+  - job_name: "grafana"
+    metrics_path: "/metrics"
+    scheme: "http"
+    static_configs:
+      - targets: ["grafana:3000"]
+  - job_name: "prometheus"
+    metrics_path: "/metrics"
+    scheme: "http"
+    static_configs:
+      - targets: ["localhost:9090"]
