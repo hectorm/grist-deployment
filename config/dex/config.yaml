@@ -1,0 +1,41 @@
+issuer: "https://{{ .Env.DEX_DOMAIN }}/dex"
+storage:
+  type: "postgres"
+  config:
+    host: "postgres"
+    port: 5432
+    database: "dex"
+    user: "dex"
+    password: "{{ .Env.DEX_POSTGRES_PASSWORD }}"
+    ssl:
+      mode: "disable"
+web:
+  http: "0.0.0.0:5556"
+frontend:
+  issuer: "/dex"
+  theme: "dark"
+telemetry:
+  http: "0.0.0.0:5558"
+oauth2:
+  skipApprovalScreen: true
+  alwaysShowLoginScreen: false
+staticClients:
+  - name: "Grist"
+    id: "grist"
+    secret: "{{ .Env.GRIST_OAUTH_CLIENT_SECRET }}"
+    redirectURIs: ["https://{{ .Env.GRIST_DOMAIN }}/oauth2/callback"]
+  - name: "Grafana"
+    id: "grafana"
+    secret: "{{ .Env.GRAFANA_OAUTH_CLIENT_SECRET }}"
+    redirectURIs: ["https://{{ .Env.GRAFANA_DOMAIN }}/login/generic_oauth"]
+enablePasswordDB: true
+staticPasswords:
+  - username: "admin"
+    email: "admin@example.localhost"
+    hash: "{{ .Env.DEX_DEMO_USERS_PASSWORD_HASH }}"
+  - username: "alice"
+    email: "alice@example.localhost"
+    hash: "{{ .Env.DEX_DEMO_USERS_PASSWORD_HASH }}"
+  - username: "bob"
+    email: "bob@example.localhost"
+    hash: "{{ .Env.DEX_DEMO_USERS_PASSWORD_HASH }}"
