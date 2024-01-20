@@ -104,7 +104,6 @@ services:
     networks:
       - "private"
     volumes:
-      - { type: "bind", source: "./config/authentik/certs/saml-grist-sp/", target: "/certs/saml-grist-sp/", read_only: true }
       - { type: "volume", source: "grist-data", target: "/persist/" }
     environment:
       APP_HOME_URL: "https://${GRIST_DOMAIN:?}"
@@ -135,13 +134,10 @@ services:
       GRIST_SANDBOX_FLAVOR: "${GRIST_SANDBOX_FLAVOR:-gvisor}"
       PYTHON_VERSION: "${PYTHON_VERSION:-3}"
       PYTHON_VERSION_ON_CREATION: "${PYTHON_VERSION_ON_CREATION:-3}"
-      GRIST_SAML_SP_HOST: "https://${GRIST_DOMAIN:?}"
-      GRIST_SAML_SP_KEY: "/certs/saml-grist-sp/saml-grist-sp.key"
-      GRIST_SAML_SP_CERT: "/certs/saml-grist-sp/saml-grist-sp.crt"
-      GRIST_SAML_IDP_CERTS: "/certs/saml-grist-sp/saml-idp.crt"
-      GRIST_SAML_IDP_LOGIN: "https://${AUTHENTIK_DOMAIN:?}/application/saml/grist/sso/binding/redirect/"
-      GRIST_SAML_IDP_LOGOUT: "https://${AUTHENTIK_DOMAIN:?}/application/saml/grist/slo/binding/redirect/"
-      GRIST_SAML_IDP_UNENCRYPTED: "1"
+      GRIST_OIDC_IDP_ISSUER: "https://${AUTHENTIK_DOMAIN:?}/application/o/grist/.well-known/openid-configuration"
+      GRIST_OIDC_IDP_CLIENT_ID: "grist"
+      GRIST_OIDC_IDP_CLIENT_SECRET: "${GRIST_OAUTH_CLIENT_SECRET:?}"
+      GRIST_OIDC_IDP_SCOPES: "openid email profile"
       GRIST_DOCS_MINIO_ENDPOINT: "minio"
       GRIST_DOCS_MINIO_PORT: "9000"
       GRIST_DOCS_MINIO_USE_SSL: "0"
@@ -222,6 +218,7 @@ services:
       AUTHENTIK_DISABLE_STARTUP_ANALYTICS: "true"
       AUTHENTIK_AVATARS: "initials"
       GRIST_DOMAIN: "${GRIST_DOMAIN:?}"
+      GRIST_OAUTH_CLIENT_SECRET: "${GRIST_OAUTH_CLIENT_SECRET:?}"
       MINIO_DOMAIN: "${MINIO_DOMAIN:?}"
       GRAFANA_DOMAIN: "${GRAFANA_DOMAIN:?}"
       GRAFANA_OAUTH_CLIENT_SECRET: "${GRAFANA_OAUTH_CLIENT_SECRET:?}"
