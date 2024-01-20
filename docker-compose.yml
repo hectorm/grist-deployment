@@ -168,6 +168,10 @@ services:
       timeout: "5s"
       retries: 2
     depends_on:
+      authentik-server:
+        condition: "service_healthy"
+      authentik-worker:
+        condition: "service_healthy"
       minio:
         condition: "service_healthy"
       minio-init:
@@ -402,6 +406,10 @@ services:
       timeout: "5s"
       retries: 2
     depends_on:
+      authentik-server:
+        condition: "service_healthy"
+      authentik-worker:
+        condition: "service_healthy"
       postgres:
         condition: "service_healthy"
       proxy:
