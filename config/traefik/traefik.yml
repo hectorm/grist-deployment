@@ -8,8 +8,6 @@ entryPoints:
   https:
     address: ":443/tcp"
     http3: { }
-  ldaps:
-    address: ":636/tcp"
   postgres:
     address: ":5432/tcp"
 providers:

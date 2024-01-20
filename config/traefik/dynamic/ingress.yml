@@ -33,11 +33,11 @@ http:
       service: "grist"
       tls:
         certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
-    authentik:
-      rule: 'Host(`{{ env "AUTHENTIK_DOMAIN" }}`)'
+    dex:
+      rule: 'Host(`{{ env "DEX_DOMAIN" }}`)'
       entryPoints: ["https"]
-      middlewares: ["compress", "security-headers", "authentik-security-headers"]
-      service: "authentik"
+      middlewares: ["compress", "security-headers", "dex-security-headers"]
+      service: "dex"
       tls:
         certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
     minio-s3:
@@ -49,7 +49,7 @@ http:
     minio-console:
       rule: 'Host(`{{ env "MINIO_DOMAIN" }}`) && PathPrefix(`/console/`)'
       entryPoints: ["https"]
-      middlewares: ["compress", "strip-prefix", "forward-auth", "security-headers", "minio-console-security-headers"]
+      middlewares: ["compress", "strip-prefix", "basic-auth", "security-headers", "minio-console-security-headers"]
       service: "minio-console"
       tls:
         certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
@@ -63,14 +63,14 @@ http:
     prometheus:
       rule: 'Host(`{{ env "PROMETHEUS_DOMAIN" }}`)'
       entryPoints: ["https"]
-      middlewares: ["compress", "forward-auth", "security-headers", "prometheus-security-headers"]
+      middlewares: ["compress", "basic-auth", "security-headers", "prometheus-security-headers"]
       service: "prometheus"
       tls:
         certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
     traefik:
       rule: 'Host(`{{ env "TRAEFIK_DOMAIN" }}`)'
       entryPoints: ["https"]
-      middlewares: ["compress", "forward-auth", "security-headers", "traefik-security-headers"]
+      middlewares: ["compress", "basic-auth", "security-headers", "traefik-security-headers"]
       service: "api@internal"
       tls:
         certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
@@ -95,22 +95,10 @@ http:
     strip-prefix:
       stripPrefixRegex:
         regex: ['\/[^\/]+']
-    forward-auth:
-      forwardAuth:
-        address: "http://authentik-proxy:9000/outpost.goauthentik.io/auth/traefik"
-        trustForwardHeader: true
-        authResponseHeaders:
-          - "X-authentik-username"
-          - "X-authentik-groups"
-          - "X-authentik-email"
-          - "X-authentik-name"
-          - "X-authentik-uid"
-          - "X-authentik-jwt"
-          - "X-authentik-meta-jwks"
-          - "X-authentik-meta-outpost"
-          - "X-authentik-meta-provider"
-          - "X-authentik-meta-app"
-          - "X-authentik-meta-version"
+    basic-auth:
+      basicAuth:
+        users: ['{{ env "TRAEFIK_BASIC_AUTH" }}']
+        removeHeader: true
     security-headers:
       headers:
         stsSeconds: 31536000
@@ -130,7 +118,7 @@ http:
           img-src 'self' blob: data:;
           connect-src 'self' https://unpkg.com https://raw.githubusercontent.com;
           frame-src 'self' https://gristlabs.github.io;
-    authentik-security-headers:
+    dex-security-headers:
       headers:
         contentSecurityPolicy: >-
           default-src 'self';
@@ -171,10 +159,10 @@ http:
       loadBalancer:
         servers:
           - url: "http://grist:8484"
-    authentik:
+    dex:
       loadBalancer:
         servers:
-          - url: "http://authentik-server:9000"
+          - url: "http://dex:5556"
     minio-s3:
       loadBalancer:
         servers:
@@ -193,21 +181,11 @@ http:
           - url: "http://prometheus:9090"
 tcp:
   routers:
-    authentik-ldap:
-      rule: 'HostSNI(`{{ env "AUTHENTIK_DOMAIN" }}`)'
-      entryPoints: ["ldaps"]
-      service: "authentik-ldap"
-      tls:
-        certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
     postgres:
       rule: 'HostSNI(`*`)'
       entryPoints: ["postgres"]
       service: "postgres"
   services:
-    authentik-ldap:
-      loadBalancer:
-        servers:
-          - address: "authentik-ldap:3389"
     postgres:
       loadBalancer:
         servers:

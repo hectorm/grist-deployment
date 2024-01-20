@@ -7,12 +7,8 @@ x-traefik-image: &traefik-image "docker.io/traefik:3.0"
 x-proxy-image: &proxy-image "docker.io/hectorm/proxy:v2"
 # https://hub.docker.com/r/gristlabs/grist
 x-grist-image: &grist-image "docker.io/gristlabs/grist:1.1.14"
-# https://github.com/goauthentik/authentik/pkgs/container/server
-x-authentik-server-image: &authentik-server-image "ghcr.io/goauthentik/server:2024.4"
-# https://github.com/goauthentik/authentik/pkgs/container/proxy
-x-authentik-proxy-image: &authentik-proxy-image "ghcr.io/goauthentik/proxy:2024.4"
-# https://github.com/goauthentik/authentik/pkgs/container/ldap
-x-authentik-ldap-image: &authentik-ldap-image "ghcr.io/goauthentik/ldap:2024.4"
+# https://hub.docker.com/r/dexidp/dex
+x-dex-image: &dex-image "docker.io/dexidp/dex:v2.39.1"
 # https://hub.docker.com/r/minio/minio
 x-minio-image: &minio-image "docker.io/minio/minio:RELEASE.2024-05-10T01-41-38Z"
 # https://hub.docker.com/r/minio/mc
@@ -38,7 +34,7 @@ services:
       private:
         aliases:
           - "${GRIST_DOMAIN:?}"
-          - "${AUTHENTIK_DOMAIN:?}"
+          - "${DEX_DOMAIN:?}"
           - "${MINIO_DOMAIN:?}"
           - "${GRAFANA_DOMAIN:?}"
           - "${PROMETHEUS_DOMAIN:?}"
@@ -47,7 +43,6 @@ services:
       - "80:80/tcp" # HTTP.
       - "443:443/tcp" # HTTPS.
       - "443:443/udp" # HTTPS (QUIC).
-      - "636:636/tcp" # LDAPS.
       - "127.0.0.1:5432:5432/tcp" # PostgreSQL.
     volumes:
       - { type: "bind", source: "./config/traefik/traefik.yml", target: "/etc/traefik/traefik.yml", read_only: true }
@@ -55,12 +50,13 @@ services:
       - { type: "bind", source: "./config/traefik/certs/server/", target: "/etc/traefik/certs/", read_only: true }
       - { type: "volume", source: "traefik-acme", target: "/etc/traefik/acme/" }
     environment:
+      TRAEFIK_BASIC_AUTH: "${TRAEFIK_BASIC_AUTH:?}"
       TRAEFIK_TLS_RESOLVER: "${TRAEFIK_TLS_RESOLVER:-}"
       TRAEFIK_TLS_KEY: "${TRAEFIK_TLS_KEY:-}"
       TRAEFIK_TLS_CERT: "${TRAEFIK_TLS_CERT:-}"
       TRAEFIK_MTLS_CERTS: "${TRAEFIK_MTLS_CERTS:-}"
       GRIST_DOMAIN: "${GRIST_DOMAIN:?}"
-      AUTHENTIK_DOMAIN: "${AUTHENTIK_DOMAIN:?}"
+      DEX_DOMAIN: "${DEX_DOMAIN:?}"
       MINIO_DOMAIN: "${MINIO_DOMAIN:?}"
       GRAFANA_DOMAIN: "${GRAFANA_DOMAIN:?}"
       PROMETHEUS_DOMAIN: "${PROMETHEUS_DOMAIN:?}"
@@ -134,10 +130,11 @@ services:
       GRIST_SANDBOX_FLAVOR: "${GRIST_SANDBOX_FLAVOR:-gvisor}"
       PYTHON_VERSION: "${PYTHON_VERSION:-3}"
       PYTHON_VERSION_ON_CREATION: "${PYTHON_VERSION_ON_CREATION:-3}"
-      GRIST_OIDC_IDP_ISSUER: "https://${AUTHENTIK_DOMAIN:?}/application/o/grist/.well-known/openid-configuration"
+      GRIST_OIDC_IDP_ISSUER: "https://${DEX_DOMAIN:?}/dex/.well-known/openid-configuration"
       GRIST_OIDC_IDP_CLIENT_ID: "grist"
       GRIST_OIDC_IDP_CLIENT_SECRET: "${GRIST_OAUTH_CLIENT_SECRET:?}"
       GRIST_OIDC_IDP_SCOPES: "openid email profile"
+      GRIST_OIDC_IDP_SKIP_END_SESSION_ENDPOINT: "true"
       GRIST_DOCS_MINIO_ENDPOINT: "minio"
       GRIST_DOCS_MINIO_PORT: "9000"
       GRIST_DOCS_MINIO_USE_SSL: "0"
@@ -167,9 +164,7 @@ services:
       timeout: "10s"
       retries: 2
     depends_on:
-      authentik-server:
-        condition: "service_healthy"
-      authentik-worker:
+      dex:
         condition: "service_healthy"
       minio:
         condition: "service_healthy"
@@ -180,136 +175,33 @@ services:
       proxy:
         condition: "service_healthy"
 
-  authentik-server:
-    image: *authentik-server-image
+  dex:
+    image: *dex-image
     restart: "always"
-    container_name: "docs-authentik-server"
-    hostname: "authentik-server"
+    container_name: "docs-dex"
+    hostname: "dex"
     networks:
       - "private"
-    volumes: &authentik-volumes
-      - { type: "bind", source: "./config/authentik/blueprints/", target: "/blueprints/custom/", read_only: true }
-      - { type: "bind", source: "./config/authentik/web/dist/custom.css", target: "/web/dist/custom.css", read_only: true }
-      - { type: "bind", source: "./config/authentik/web/dist/custom/", target: "/web/dist/custom/", read_only: true }
-      - { type: "bind", source: "./config/authentik/web/dist/custom/blank.jpg", target: "/web/dist/assets/images/flow_background.jpg", read_only: true }
-    environment: &authentik-environment
-      AUTHENTIK_BOOTSTRAP_EMAIL: "${AUTHENTIK_BOOTSTRAP_EMAIL:?}"
-      AUTHENTIK_BOOTSTRAP_PASSWORD: "${AUTHENTIK_BOOTSTRAP_PASSWORD:?}"
-      AUTHENTIK_BOOTSTRAP_TOKEN: "${AUTHENTIK_BOOTSTRAP_TOKEN:?}"
-      AUTHENTIK_SECRET_KEY: "${AUTHENTIK_SECRET_KEY:?}"
-      AUTHENTIK_EMAIL__HOST: "${AUTHENTIK_EMAIL_HOST:-}"
-      AUTHENTIK_EMAIL__PORT: "${AUTHENTIK_EMAIL_PORT:-465}"
-      AUTHENTIK_EMAIL__USERNAME: "${AUTHENTIK_EMAIL_USERNAME:-}"
-      AUTHENTIK_EMAIL__PASSWORD: "${AUTHENTIK_EMAIL_PASSWORD:-}"
-      AUTHENTIK_EMAIL__USE_TLS: "${AUTHENTIK_EMAIL_USE_TLS:-false}"
-      AUTHENTIK_EMAIL__USE_SSL: "${AUTHENTIK_EMAIL_USE_SSL:-true}"
-      AUTHENTIK_EMAIL__FROM: "${AUTHENTIK_EMAIL_FROM:-${AUTHENTIK_EMAIL_USERNAME:-}}"
-      AUTHENTIK_REDIS__HOST: "redis-authentik"
-      AUTHENTIK_REDIS__PORT: "6379"
-      AUTHENTIK_REDIS__PASSWORD: "${REDIS_AUTHENTIK_PASSWORD:?}"
-      AUTHENTIK_REDIS__DB: "1"
-      AUTHENTIK_POSTGRESQL__HOST: "postgres"
-      AUTHENTIK_POSTGRESQL__PORT: "5432"
-      AUTHENTIK_POSTGRESQL__NAME: "authentik"
-      AUTHENTIK_POSTGRESQL__USER: "authentik"
-      AUTHENTIK_POSTGRESQL__PASSWORD: "${POSTGRES_AUTHENTIK_PASSWORD:?}"
-      AUTHENTIK_DISABLE_UPDATE_CHECK: "true"
-      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
-      AUTHENTIK_DISABLE_STARTUP_ANALYTICS: "true"
-      AUTHENTIK_AVATARS: "initials"
+    volumes:
+      - { type: "bind", source: "./config/dex/config.yaml", target: "/etc/dex/config.yaml", read_only: true }
+    environment:
+      DEX_DOMAIN: "${DEX_DOMAIN:?}"
+      DEX_POSTGRES_PASSWORD: "${POSTGRES_DEX_PASSWORD:?}"
+      DEX_DEMO_USERS_PASSWORD_HASH: "${DEX_DEMO_USERS_PASSWORD_HASH:?}"
       GRIST_DOMAIN: "${GRIST_DOMAIN:?}"
       GRIST_OAUTH_CLIENT_SECRET: "${GRIST_OAUTH_CLIENT_SECRET:?}"
       MINIO_DOMAIN: "${MINIO_DOMAIN:?}"
       GRAFANA_DOMAIN: "${GRAFANA_DOMAIN:?}"
       GRAFANA_OAUTH_CLIENT_SECRET: "${GRAFANA_OAUTH_CLIENT_SECRET:?}"
-      PROMETHEUS_DOMAIN: "${PROMETHEUS_DOMAIN:?}"
-      TRAEFIK_DOMAIN: "${TRAEFIK_DOMAIN:?}"
-    command: ["server"]
+    command: ["dex", "serve", "/etc/dex/config.yaml"]
     healthcheck:
-      test: ["CMD", "ak", "healthcheck"]
-      start_period: "300s"
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:5556/dex/healthz"]
+      start_period: "120s"
       interval: "30s"
       timeout: "10s"
       retries: 2
     depends_on:
       postgres:
-        condition: "service_healthy"
-      redis-authentik:
-        condition: "service_healthy"
-
-  authentik-worker:
-    image: *authentik-server-image
-    restart: "always"
-    container_name: "docs-authentik-worker"
-    hostname: "authentik-worker"
-    networks:
-      - "private"
-    volumes: *authentik-volumes
-    environment: *authentik-environment
-    command: ["worker"]
-    healthcheck:
-      test: ["CMD", "ak", "healthcheck"]
-      start_period: "300s"
-      interval: "30s"
-      timeout: "10s"
-      retries: 2
-    depends_on:
-      postgres:
-        condition: "service_healthy"
-      redis-authentik:
-        condition: "service_healthy"
-
-  authentik-proxy:
-    image: *authentik-proxy-image
-    restart: "always"
-    container_name: "docs-authentik-proxy"
-    hostname: "authentik-proxy"
-    networks:
-      - "private"
-    environment:
-      AUTHENTIK_HOST: "http://authentik-server:9000"
-      AUTHENTIK_HOST_BROWSER: "https://${AUTHENTIK_DOMAIN:?}"
-      AUTHENTIK_TOKEN: "${AUTHENTIK_BOOTSTRAP_TOKEN:?}"
-      AUTHENTIK_REDIS__HOST: "redis-authentik"
-      AUTHENTIK_REDIS__PORT: "6379"
-      AUTHENTIK_REDIS__PASSWORD: "${REDIS_AUTHENTIK_PASSWORD:?}"
-      AUTHENTIK_REDIS__DB: "1"
-    healthcheck:
-      test: ["CMD", "/proxy", "healthcheck"]
-      start_period: "300s"
-      interval: "30s"
-      timeout: "10s"
-      retries: 2
-    depends_on:
-      authentik-server:
-        condition: "service_healthy"
-      authentik-worker:
-        condition: "service_healthy"
-
-  authentik-ldap:
-    image: *authentik-ldap-image
-    restart: "always"
-    container_name: "docs-authentik-ldap"
-    hostname: "authentik-ldap"
-    networks:
-      - "private"
-    environment:
-      AUTHENTIK_HOST: "http://authentik-server:9000"
-      AUTHENTIK_TOKEN: "${AUTHENTIK_BOOTSTRAP_TOKEN:?}"
-      AUTHENTIK_REDIS__HOST: "redis-authentik"
-      AUTHENTIK_REDIS__PORT: "6379"
-      AUTHENTIK_REDIS__PASSWORD: "${REDIS_AUTHENTIK_PASSWORD:?}"
-      AUTHENTIK_REDIS__DB: "1"
-    healthcheck:
-      test: ["CMD", "/ldap", "healthcheck"]
-      start_period: "300s"
-      interval: "30s"
-      timeout: "10s"
-      retries: 2
-    depends_on:
-      authentik-server:
-        condition: "service_healthy"
-      authentik-worker:
         condition: "service_healthy"
 
   minio:
@@ -382,21 +274,18 @@ services:
       GF_USERS_ALLOW_ORG_CREATE: "false"
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_AUTH_BASIC_ENABLED: "false"
-      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_AUTH_DISABLE_LOGIN_FORM: "false"
       GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
-      GF_AUTH_GENERIC_OAUTH_AUTO_LOGIN: "true"
-      GF_AUTH_GENERIC_OAUTH_NAME: "authentik"
+      GF_AUTH_GENERIC_OAUTH_AUTO_LOGIN: "false"
+      GF_AUTH_GENERIC_OAUTH_NAME: "dex"
       GF_AUTH_GENERIC_OAUTH_ICON: "signin"
       GF_AUTH_GENERIC_OAUTH_CLIENT_ID: "grafana"
       GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: "${GRAFANA_OAUTH_CLIENT_SECRET:?}"
       GF_AUTH_GENERIC_OAUTH_SCOPES: "openid email profile"
-      GF_AUTH_GENERIC_OAUTH_AUTH_URL: "https://${AUTHENTIK_DOMAIN:?}/application/o/authorize/"
-      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "http://authentik-server:9000/application/o/token/"
-      GF_AUTH_GENERIC_OAUTH_API_URL: "http://authentik-server:9000/application/o/userinfo/"
-      GF_AUTH_SIGNOUT_REDIRECT_URL: "https://${AUTHENTIK_DOMAIN:?}/application/o/grafana/end-session/"
-      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: "contains(groups[*], 'authentik Admins') && 'GrafanaAdmin'"
-      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_STRICT: "true"
-      GF_AUTH_GENERIC_OAUTH_ALLOW_ASSIGN_GRAFANA_ADMIN: "true"
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: "https://${DEX_DOMAIN:?}/dex/auth"
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "http://dex:5556/dex/token"
+      GF_AUTH_GENERIC_OAUTH_API_URL: "http://dex:5556/dex/userinfo"
+      GF_AUTH_GENERIC_OAUTH_SKIP_ORG_ROLE_SYNC: "true"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
     healthcheck:
@@ -406,9 +295,7 @@ services:
       timeout: "10s"
       retries: 2
     depends_on:
-      authentik-server:
-        condition: "service_healthy"
-      authentik-worker:
+      dex:
         condition: "service_healthy"
       postgres:
         condition: "service_healthy"
@@ -445,7 +332,7 @@ services:
     environment:
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "${POSTGRES_SUPERUSER_PASSWORD:?}"
-      POSTGRES_AUTHENTIK_PASSWORD: "${POSTGRES_AUTHENTIK_PASSWORD:?}"
+      POSTGRES_DEX_PASSWORD: "${POSTGRES_DEX_PASSWORD:?}"
       POSTGRES_GRAFANA_PASSWORD: "${POSTGRES_GRAFANA_PASSWORD:?}"
     healthcheck:
       test: ["CMD", "pg_isready", "-qU", "postgres"]
@@ -466,26 +353,6 @@ services:
       - { type: "volume", source: "redis-grist-data", target: "/data/" }
     environment:
       REDISCLI_AUTH: "${REDIS_GRIST_PASSWORD:?}"
-    command: ["sh", "-euc", "sh /etc/redis/redis.conf.sh | exec redis-server -"]
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
-      start_period: "120s"
-      interval: "30s"
-      timeout: "10s"
-      retries: 2
-
-  redis-authentik:
-    image: *redis-image
-    restart: "always"
-    container_name: "docs-redis-authentik"
-    hostname: "redis-authentik"
-    networks:
-      - "private"
-    volumes:
-      - { type: "bind", source: "./config/redis/redis.conf.sh", target: "/etc/redis/redis.conf.sh", read_only: true }
-      - { type: "volume", source: "redis-authentik-data", target: "/data/" }
-    environment:
-      REDISCLI_AUTH: "${REDIS_AUTHENTIK_PASSWORD:?}"
     command: ["sh", "-euc", "sh /etc/redis/redis.conf.sh | exec redis-server -"]
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
@@ -516,9 +383,6 @@ volumes:
 
   redis-grist-data:
     name: "docs-redis-grist-data"
-
-  redis-authentik-data:
-    name: "docs-redis-authentik-data"
 
 networks:
 
