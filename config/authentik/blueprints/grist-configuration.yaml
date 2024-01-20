@@ -24,11 +24,11 @@ entries:
       identifiers:
         name: "Default - Provider authorization flow (explicit consent)"
       required: true
-  # Apply "System - SAML Provider - Mappings" blueprint
+  # Apply "System - OAuth2 Provider - Scopes" blueprint
   - model: "authentik_blueprints.metaapplyblueprint"
     attrs:
       identifiers:
-        name: "System - SAML Provider - Mappings"
+        name: "System - OAuth2 Provider - Scopes"
       required: true
   # Apply "Groups configuration" blueprint
   - model: "authentik_blueprints.metaapplyblueprint"
@@ -36,45 +36,36 @@ entries:
       identifiers:
         name: "Groups configuration"
       required: true
-  # Apply "SAML IdP certificate" blueprint
+  # Apply "JWT certificate" blueprint
   - model: "authentik_blueprints.metaapplyblueprint"
     attrs:
       identifiers:
-        name: "SAML IdP certificate"
-      required: true
-  # Apply "SAML Grist SP certificate" blueprint
-  - model: "authentik_blueprints.metaapplyblueprint"
-    attrs:
-      identifiers:
-        name: "SAML Grist SP certificate"
+        name: "JWT certificate"
       required: true
   # Grist provider
   - id: "grist-provider"
     identifiers:
       name: "Grist"
-    model: "authentik_providers_saml.samlprovider"
+    model: "authentik_providers_oauth2.oauth2provider"
     attrs:
       name: "Grist"
       authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
       authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-explicit-consent]]
-      acs_url: !Format [https://%s/saml/assert, !Env GRIST_DOMAIN]
-      issuer: "authentik"
-      sp_binding: "post"
-      signing_kp: !Find [authentik_crypto.certificatekeypair, [name, SAML IdP certificate]]
-      verification_kp: !Find [authentik_crypto.certificatekeypair, [name, SAML Grist SP certificate]]
+      client_type: "confidential"
+      client_id: "grist"
+      client_secret: !Env GRIST_OAUTH_CLIENT_SECRET
+      redirect_uris: !Format [https://%s/.*, !Env GRIST_DOMAIN]
+      signing_key: !Find [authentik_crypto.certificatekeypair, [name, JWT certificate]]
+      access_code_validity: "minutes=1"
+      access_token_validity: "minutes=5"
+      refresh_token_validity: "days=30"
       property_mappings:
-        - !Find [authentik_providers_saml.samlpropertymapping, [managed, goauthentik.io/providers/saml/uid]]
-        - !Find [authentik_providers_saml.samlpropertymapping, [managed, goauthentik.io/providers/saml/username]]
-        - !Find [authentik_providers_saml.samlpropertymapping, [managed, goauthentik.io/providers/saml/ms-windowsaccountname]]
-        - !Find [authentik_providers_saml.samlpropertymapping, [managed, goauthentik.io/providers/saml/groups]]
-        - !Find [authentik_providers_saml.samlpropertymapping, [managed, goauthentik.io/providers/saml/email]]
-        - !Find [authentik_providers_saml.samlpropertymapping, [managed, goauthentik.io/providers/saml/name]]
-        - !Find [authentik_providers_saml.samlpropertymapping, [managed, goauthentik.io/providers/saml/upn]]
-      assertion_valid_not_before: "minutes=-5"
-      assertion_valid_not_on_or_after: "minutes=5"
-      session_valid_not_on_or_after: "minutes=86400"
-      digest_algorithm: "http://www.w3.org/2001/04/xmlenc#sha256"
-      signature_algorithm: "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+      sub_mode: "hashed_user_id"
+      include_claims_in_id_token: true
+      issuer_mode: "per_provider"
   # Grist application
   - id: "grist-application"
     identifiers:
