@@ -13,21 +13,11 @@ scrape_configs:
     scheme: "http"
     static_configs:
       - targets: ["grist:9090"]
-  - job_name: "authentik-server"
+  - job_name: "dex"
     metrics_path: "/metrics"
     scheme: "http"
     static_configs:
-      - targets: ["authentik-server:9300"]
-  - job_name: "authentik-proxy"
-    metrics_path: "/metrics"
-    scheme: "http"
-    static_configs:
-      - targets: ["authentik-proxy:9300"]
-  - job_name: "authentik-ldap"
-    metrics_path: "/metrics"
-    scheme: "http"
-    static_configs:
-      - targets: ["authentik-ldap:9300"]
+      - targets: ["dex:5558"]
   - job_name: "minio"
     metrics_path: "/minio/v2/metrics/cluster"
     scheme: "http"
