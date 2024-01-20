@@ -8,6 +8,11 @@ scrape_configs:
     scheme: "http"
     static_configs:
       - targets: ["traefik:8080"]
+  - job_name: "grist"
+    metrics_path: "/metrics"
+    scheme: "http"
+    static_configs:
+      - targets: ["grist:9090"]
   - job_name: "authentik-server"
     metrics_path: "/metrics"
     scheme: "http"

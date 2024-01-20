@@ -158,6 +158,7 @@ services:
       HUGGINGFACE_API_KEY: "${HUGGINGFACE_API_KEY:-}"
       COMPLETION_MODEL: "${COMPLETION_MODEL:-}"
       COMPLETION_URL: "${COMPLETION_URL:-}"
+      GRIST_PROMCLIENT_PORT: "9090"
       # Set to "0" to disable certificate validation.
       # WARNING, changing this value is unsafe and should only be used for testing purposes.
       NODE_TLS_REJECT_UNAUTHORIZED: "${GRIST_NODE_TLS_REJECT_UNAUTHORIZED:-1}"
