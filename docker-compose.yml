@@ -30,7 +30,7 @@ services:
 
   traefik:
     image: *traefik-image
-    restart: "on-failure:10"
+    restart: "always"
     container_name: "docs-traefik"
     hostname: "traefik"
     networks:
@@ -76,7 +76,7 @@ services:
 
   proxy:
     image: *proxy-image
-    restart: "on-failure:10"
+    restart: "always"
     container_name: "docs-proxy"
     hostname: "proxy"
     networks:
@@ -96,7 +96,7 @@ services:
 
   grist:
     image: *grist-image
-    restart: "on-failure:10"
+    restart: "always"
     container_name: "docs-grist"
     hostname: "grist"
     networks:
@@ -183,7 +183,7 @@ services:
 
   authentik-server:
     image: *authentik-server-image
-    restart: "on-failure:10"
+    restart: "always"
     container_name: "docs-authentik-server"
     hostname: "authentik-server"
     networks:
@@ -239,7 +239,7 @@ services:
 
   authentik-worker:
     image: *authentik-server-image
-    restart: "on-failure:10"
+    restart: "always"
     container_name: "docs-authentik-worker"
     hostname: "authentik-worker"
     networks:
@@ -261,7 +261,7 @@ services:
 
   authentik-proxy:
     image: *authentik-proxy-image
-    restart: "on-failure:10"
+    restart: "always"
     container_name: "docs-authentik-proxy"
     hostname: "authentik-proxy"
     networks:
@@ -288,7 +288,7 @@ services:
 
   authentik-ldap:
     image: *authentik-ldap-image
-    restart: "on-failure:10"
+    restart: "always"
     container_name: "docs-authentik-ldap"
     hostname: "authentik-ldap"
     networks:
@@ -314,7 +314,7 @@ services:
 
   minio:
     image: *minio-image
-    restart: "on-failure:10"
+    restart: "always"
     container_name: "docs-minio"
     hostname: "minio"
     networks:
@@ -340,7 +340,7 @@ services:
 
   minio-init:
     image: *minio-mc-image
-    restart: "on-failure:10"
+    restart: "on-failure"
     container_name: "docs-minio-init"
     hostname: "minio-init"
     networks:
@@ -358,7 +358,7 @@ services:
 
   grafana:
     image: *grafana-image
-    restart: "on-failure:10"
+    restart: "always"
     container_name: "docs-grafana"
     hostname: "grafana"
     networks:
@@ -417,7 +417,7 @@ services:
 
   prometheus:
     image: *prometheus-image
-    restart: "on-failure:10"
+    restart: "always"
     container_name: "docs-prometheus"
     hostname: "prometheus"
     networks:
@@ -434,7 +434,7 @@ services:
 
   postgres:
     image: *postgres-image
-    restart: "on-failure:10"
+    restart: "always"
     container_name: "docs-postgres"
     hostname: "postgres"
     networks:
@@ -456,7 +456,7 @@ services:
 
   redis-grist:
     image: *redis-image
-    restart: "on-failure:10"
+    restart: "always"
     container_name: "docs-redis-grist"
     hostname: "redis-grist"
     networks:
@@ -476,7 +476,7 @@ services:
 
   redis-authentik:
     image: *redis-image
-    restart: "on-failure:10"
+    restart: "always"
     container_name: "docs-redis-authentik"
     hostname: "redis-authentik"
     networks:
