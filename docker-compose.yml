@@ -6,7 +6,7 @@ x-traefik-image: &traefik-image "docker.io/traefik:2.10"
 # https://hub.docker.com/r/hectorm/proxy
 x-proxy-image: &proxy-image "docker.io/hectorm/proxy:v1"
 # https://hub.docker.com/r/gristlabs/grist
-x-grist-image: &grist-image "docker.io/gristlabs/grist:1.1.9"
+x-grist-image: &grist-image "docker.io/gristlabs/grist:1.1.10"
 # https://github.com/goauthentik/authentik/pkgs/container/server
 x-authentik-server-image: &authentik-server-image "ghcr.io/goauthentik/server:2023.10"
 # https://github.com/goauthentik/authentik/pkgs/container/proxy
@@ -127,7 +127,7 @@ services:
       GRIST_MAX_UPLOAD_IMPORT_MB: "${GRIST_MAX_UPLOAD_IMPORT_MB:-500}"
       GRIST_PAGE_TITLE_SUFFIX: "${GRIST_PAGE_TITLE_SUFFIX:-_blank}"
       GRIST_WIDGET_LIST_URL: "${GRIST_WIDGET_LIST_URL:-https://github.com/gristlabs/grist-widget/releases/download/latest/manifest.json}"
-      GRIST_EXPERIMENTAL_PLUGINS: "${GRIST_EXPERIMENTAL_PLUGINS:-0}"
+      GRIST_EXPERIMENTAL_PLUGINS: "${GRIST_EXPERIMENTAL_PLUGINS:-1}"
       GRIST_TELEMETRY_LEVEL: "${GRIST_TELEMETRY_LEVEL:-off}"
       GRIST_THROTTLE_CPU: "${GRIST_THROTTLE_CPU:-true}"
       GRIST_SANDBOX_FLAVOR: "${GRIST_SANDBOX_FLAVOR:-gvisor}"
