@@ -36,6 +36,12 @@ entries:
       identifiers:
         name: "Groups configuration"
       required: true
+  # Apply "JWT certificate" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "JWT certificate"
+      required: true
   # Grafana provider
   - id: "grafana-provider"
     identifiers:
@@ -49,6 +55,7 @@ entries:
       client_id: "grafana"
       client_secret: !Env GRAFANA_OAUTH_CLIENT_SECRET
       redirect_uris: !Format [https://%s/.*, !Env GRAFANA_DOMAIN]
+      signing_key: !Find [authentik_crypto.certificatekeypair, [name, JWT certificate]]
       access_code_validity: "minutes=1"
       access_token_validity: "minutes=5"
       refresh_token_validity: "days=30"

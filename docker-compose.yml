@@ -158,9 +158,8 @@ services:
       HUGGINGFACE_API_KEY: "${HUGGINGFACE_API_KEY:-}"
       COMPLETION_MODEL: "${COMPLETION_MODEL:-}"
       COMPLETION_URL: "${COMPLETION_URL:-}"
-      # Set to "0" to disable certificate validation. Allows Grist to make
-      # requests to itself if the reverse proxy uses a self-signed certificate
-      # during development.
+      # Set to "0" to disable certificate validation.
+      # WARNING, changing this value is unsafe and should only be used for testing purposes.
       NODE_TLS_REJECT_UNAUTHORIZED: "${GRIST_NODE_TLS_REJECT_UNAUTHORIZED:-1}"
     healthcheck:
       test: ["CMD", "bash", "-euc", ">/dev/tcp/localhost/8484"]
