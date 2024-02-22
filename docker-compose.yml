@@ -16,7 +16,7 @@ x-authentik-ldap-image: &authentik-ldap-image "ghcr.io/goauthentik/ldap:2024.2"
 # https://hub.docker.com/r/minio/minio
 x-minio-image: &minio-image "docker.io/minio/minio:RELEASE.2024-02-17T01-15-57Z"
 # https://hub.docker.com/r/minio/mc
-x-minio-mc-image: &minio-mc-image "docker.io/minio/mc:RELEASE.2024-02-09T22-18-24Z"
+x-minio-mc-image: &minio-mc-image "docker.io/minio/mc:RELEASE.2024-02-16T11-05-48Z"
 # https://hub.docker.com/r/grafana/grafana
 x-grafana-image: &grafana-image "docker.io/grafana/grafana:10.3.1"
 # https://hub.docker.com/r/prom/prometheus
