@@ -50,10 +50,10 @@ services:
       - "636:636/tcp" # LDAPS.
       - "127.0.0.1:5432:5432/tcp" # PostgreSQL.
     volumes:
-      - "./config/traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
-      - "./config/traefik/dynamic/:/etc/traefik/dynamic/:ro"
-      - "./config/traefik/certs/server/:/etc/traefik/certs/:ro"
-      - "traefik-acme:/etc/traefik/acme/"
+      - { type: "bind", source: "./config/traefik/traefik.yml", target: "/etc/traefik/traefik.yml", read_only: true }
+      - { type: "bind", source: "./config/traefik/dynamic/", target: "/etc/traefik/dynamic/", read_only: true }
+      - { type: "bind", source: "./config/traefik/certs/server/", target: "/etc/traefik/certs/", read_only: true }
+      - { type: "volume", source: "traefik-acme", target: "/etc/traefik/acme/" }
     environment:
       TRAEFIK_TLS_RESOLVER: "${TRAEFIK_TLS_RESOLVER:-}"
       TRAEFIK_TLS_KEY: "${TRAEFIK_TLS_KEY:-}"
@@ -102,9 +102,9 @@ services:
     networks:
       - "private"
     volumes:
-      - "./config/grist/static/custom.css:/grist/static/custom.css:ro"
-      - "./config/authentik/certs/saml-grist-sp/:/certs/saml-grist-sp/:ro"
-      - "grist-data:/persist/"
+      - { type: "bind", source: "./config/grist/static/custom.css", target: "/grist/static/custom.css", read_only: true }
+      - { type: "bind", source: "./config/authentik/certs/saml-grist-sp/", target: "/certs/saml-grist-sp/", read_only: true }
+      - { type: "volume", source: "grist-data", target: "/persist/" }
     environment:
       APP_HOME_URL: "https://${GRIST_DOMAIN:?}"
       APP_DOC_URL: "https://${GRIST_DOMAIN:?}"
@@ -190,10 +190,10 @@ services:
     networks:
       - "private"
     volumes: &authentik-volumes
-      - "./config/authentik/blueprints/:/blueprints/custom/:ro"
-      - "./config/authentik/web/dist/custom.css:/web/dist/custom.css:ro"
-      - "./config/authentik/web/dist/custom/:/web/dist/custom/:ro"
-      - "./config/authentik/web/dist/custom/blank.jpg:/web/dist/assets/images/flow_background.jpg:ro"
+      - { type: "bind", source: "./config/authentik/blueprints/", target: "/blueprints/custom/", read_only: true }
+      - { type: "bind", source: "./config/authentik/web/dist/custom.css", target: "/web/dist/custom.css", read_only: true }
+      - { type: "bind", source: "./config/authentik/web/dist/custom/", target: "/web/dist/custom/", read_only: true }
+      - { type: "bind", source: "./config/authentik/web/dist/custom/blank.jpg", target: "/web/dist/assets/images/flow_background.jpg", read_only: true }
     environment: &authentik-environment
       AUTHENTIK_BOOTSTRAP_EMAIL: "${AUTHENTIK_BOOTSTRAP_EMAIL:?}"
       AUTHENTIK_BOOTSTRAP_PASSWORD: "${AUTHENTIK_BOOTSTRAP_PASSWORD:?}"
@@ -321,7 +321,7 @@ services:
     networks:
       - "private"
     volumes:
-      - "minio-data:/data/"
+      - { type: "volume", source: "minio-data", target: "/data/" }
     environment:
       MINIO_ROOT_USER: "minio"
       MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:?}"
@@ -347,8 +347,8 @@ services:
     networks:
       - "private"
     volumes:
-      - "./config/minio/init.sh:/init.sh:ro"
-      - "./config/minio/policies/:/policies/:ro"
+      - { type: "bind", source: "./config/minio/init.sh", target: "/init.sh", read_only: true }
+      - { type: "bind", source: "./config/minio/policies/", target: "/policies/", read_only: true }
     environment:
       MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:?}"
       MINIO_GRIST_PASSWORD: "${MINIO_GRIST_PASSWORD:?}"
@@ -365,8 +365,8 @@ services:
     networks:
       - "private"
     volumes:
-      - "./config/grafana/provisioning/:/etc/grafana/provisioning/:ro"
-      - "grafana-data:/var/lib/grafana/"
+      - { type: "bind", source: "./config/grafana/provisioning/", target: "/etc/grafana/provisioning/", read_only: true }
+      - { type: "volume", source: "grafana-data", target: "/var/lib/grafana/" }
     environment:
       GF_SERVER_ROOT_URL: "https://${GRAFANA_DOMAIN:?}"
       GF_DATABASE_TYPE: "postgres"
@@ -424,8 +424,8 @@ services:
     networks:
       - "private"
     volumes:
-      - "./config/prometheus/:/etc/prometheus/:ro"
-      - "prometheus-data:/prometheus/"
+      - { type: "bind", source: "./config/prometheus/", target: "/etc/prometheus/", read_only: true }
+      - { type: "volume", source: "prometheus-data", target: "/prometheus/" }
     healthcheck:
       test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:9090/-/healthy"]
       start_period: "5m"
@@ -441,8 +441,8 @@ services:
     networks:
       - "private"
     volumes:
-      - "./config/postgres/initdb.d/:/docker-entrypoint-initdb.d/:ro"
-      - "postgres-data:/var/lib/postgresql/data/"
+      - { type: "bind", source: "./config/postgres/initdb.d/", target: "/docker-entrypoint-initdb.d/", read_only: true }
+      - { type: "volume", source: "postgres-data", target: "/var/lib/postgresql/data/" }
     environment:
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "${POSTGRES_SUPERUSER_PASSWORD:?}"
@@ -463,8 +463,8 @@ services:
     networks:
       - "private"
     volumes:
-      - "./config/redis/redis.conf.sh:/etc/redis/redis.conf.sh:ro"
-      - "redis-grist-data:/data/"
+      - { type: "bind", source: "./config/redis/redis.conf.sh", target: "/etc/redis/redis.conf.sh", read_only: true }
+      - { type: "volume", source: "redis-grist-data", target: "/data/" }
     environment:
       REDISCLI_AUTH: "${REDIS_GRIST_PASSWORD:?}"
     command: ["sh", "-euc", "sh /etc/redis/redis.conf.sh | exec redis-server -"]
@@ -483,8 +483,8 @@ services:
     networks:
       - "private"
     volumes:
-      - "./config/redis/redis.conf.sh:/etc/redis/redis.conf.sh:ro"
-      - "redis-authentik-data:/data/"
+      - { type: "bind", source: "./config/redis/redis.conf.sh", target: "/etc/redis/redis.conf.sh", read_only: true }
+      - { type: "volume", source: "redis-authentik-data", target: "/data/" }
     environment:
       REDISCLI_AUTH: "${REDIS_AUTHENTIK_PASSWORD:?}"
     command: ["sh", "-euc", "sh /etc/redis/redis.conf.sh | exec redis-server -"]
