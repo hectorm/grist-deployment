@@ -6,7 +6,7 @@ x-traefik-image: &traefik-image "docker.io/traefik:2.11"
 # https://hub.docker.com/r/hectorm/proxy
 x-proxy-image: &proxy-image "docker.io/hectorm/proxy:v1"
 # https://hub.docker.com/r/gristlabs/grist
-x-grist-image: &grist-image "docker.io/gristlabs/grist:1.1.11"
+x-grist-image: &grist-image "docker.io/gristlabs/grist:1.1.13"
 # https://github.com/goauthentik/authentik/pkgs/container/server
 x-authentik-server-image: &authentik-server-image "ghcr.io/goauthentik/server:2024.2"
 # https://github.com/goauthentik/authentik/pkgs/container/proxy
