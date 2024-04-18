@@ -121,7 +121,7 @@ services:
       GRIST_FORCE_LOGIN: "${GRIST_FORCE_LOGIN:-true}"
       GRIST_SUPPORT_ANON: "${GRIST_SUPPORT_ANON:-false}"
       GRIST_DEFAULT_PRODUCT: "${GRIST_DEFAULT_PRODUCT:-Free}"
-      GRIST_HIDE_UI_ELEMENTS: "${GRIST_HIDE_UI_ELEMENTS:-helpCenter,billing,templates,multiAccounts,sendToDrive,tutorials}"
+      GRIST_HIDE_UI_ELEMENTS: "${GRIST_HIDE_UI_ELEMENTS:-helpCenter,billing,templates,multiAccounts,sendToDrive,tutorials,supportGrist}"
       GRIST_LIST_PUBLIC_SITES: "${GRIST_LIST_PUBLIC_SITES:-false}"
       GRIST_MAX_UPLOAD_ATTACHMENT_MB: "${GRIST_MAX_UPLOAD_ATTACHMENT_MB:-100}"
       GRIST_MAX_UPLOAD_IMPORT_MB: "${GRIST_MAX_UPLOAD_IMPORT_MB:-500}"
