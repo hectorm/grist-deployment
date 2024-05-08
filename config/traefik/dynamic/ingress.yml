@@ -82,39 +82,16 @@ http:
     compress:
       compress:
         minResponseBodyBytes: 1024
-        excludedContentTypes:
-          - "application/gzip"
-          - "application/pdf"
-          - "application/vnd.oasis.opendocument.presentation"
-          - "application/vnd.oasis.opendocument.spreadsheet"
-          - "application/vnd.oasis.opendocument.text"
-          - "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-          - "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          - "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-          - "application/x-bzip2"
-          - "application/x-xz"
-          - "application/zip"
-          - "application/zlib"
-          - "application/zstd"
-          - "audio/aac"
-          - "audio/mpeg"
-          - "audio/ogg"
-          - "audio/opus"
-          - "audio/webm"
-          - "font/woff"
-          - "font/woff2"
-          - "image/apng"
-          - "image/avif"
-          - "image/gif"
-          - "image/jpeg"
-          - "image/jxl"
-          - "image/png"
-          - "image/vnd.microsoft.icon"
-          - "image/webp"
-          - "video/mp4"
-          - "video/mpeg"
-          - "video/ogg"
-          - "video/webm"
+        includedContentTypes:
+          - "application/javascript"
+          - "application/json"
+          - "application/wasm"
+          - "application/xml"
+          - "image/svg+xml"
+          - "text/css"
+          - "text/html"
+          - "text/javascript"
+          - "text/plain"
     strip-prefix:
       stripPrefixRegex:
         regex: ['\/[^\/]+']
@@ -141,16 +118,6 @@ http:
         stsPreload: true
         referrerPolicy: "strict-origin"
         contentTypeNosniff: true
-        permissionsPolicy: >-
-          accelerometer=(),
-          camera=(),
-          geolocation=(),
-          gyroscope=(),
-          magnetometer=(),
-          microphone=(),
-          midi=(),
-          payment=(),
-          usb=()
         customResponseHeaders:
           Server: ""
           X-Powered-By: ""
