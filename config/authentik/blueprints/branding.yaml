@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://version-2023-4.goauthentik.io/blueprints/schema.json
+# yaml-language-server: $schema=https://version-2024-2.goauthentik.io/blueprints/schema.json
 version: 1
 metadata:
   name: "Branding"
@@ -6,23 +6,25 @@ metadata:
     blueprints.goauthentik.io/description: "Branding"
     blueprints.goauthentik.io/instantiate: "true"
 entries:
-  # Apply "Default - Tenant" blueprint
+  # Apply "Default - Brand" blueprint
   - model: "authentik_blueprints.metaapplyblueprint"
+    identifiers: {}
     attrs:
       identifiers:
-        name: "Default - Tenant"
+        name: "Default - Brand"
       required: true
   # Apply "Default - Authentication flow" blueprint
   - model: "authentik_blueprints.metaapplyblueprint"
+    identifiers: {}
     attrs:
       identifiers:
         name: "Default - Authentication flow"
       required: true
-  # Apply branding to default tenant
-  - id: "default-tenant"
+  # Apply branding to default brand
+  - id: "default-brand"
     identifiers:
       domain: "authentik-default"
-    model: "authentik_tenants.tenant"
+    model: "authentik_brands.brand"
     attrs:
       branding_title: "authentik"
       branding_logo: "/static/dist/custom/blank.svg"
