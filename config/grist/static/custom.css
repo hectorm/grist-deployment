@@ -1,4 +1,0 @@
-/* Hide the "Create new team site" button in the site switcher, as this functionality is not implemented in the UI. */
-.test-site-switcher-create-new-site {
-	display: none !important;
-}

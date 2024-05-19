@@ -6,7 +6,7 @@ x-traefik-image: &traefik-image "docker.io/traefik:3.0"
 # https://hub.docker.com/r/hectorm/proxy
 x-proxy-image: &proxy-image "docker.io/hectorm/proxy:v2"
 # https://hub.docker.com/r/gristlabs/grist
-x-grist-image: &grist-image "docker.io/gristlabs/grist:1.1.13"
+x-grist-image: &grist-image "docker.io/gristlabs/grist:1.1.14"
 # https://github.com/goauthentik/authentik/pkgs/container/server
 x-authentik-server-image: &authentik-server-image "ghcr.io/goauthentik/server:2024.4"
 # https://github.com/goauthentik/authentik/pkgs/container/proxy
@@ -83,12 +83,14 @@ services:
       public:
       private:
         aliases:
+          - "api.getgrist.com"
           - "github.com"
           - "raw.githubusercontent.com"
           - "objects.githubusercontent.com"
           - "grafana.com"
     environment:
       PROXY_UPSTREAMS: |
+        api.getgrist.com:443
         github.com:443
         raw.githubusercontent.com:443
         objects.githubusercontent.com:443
@@ -102,14 +104,12 @@ services:
     networks:
       - "private"
     volumes:
-      - { type: "bind", source: "./config/grist/static/custom.css", target: "/grist/static/custom.css", read_only: true }
       - { type: "bind", source: "./config/authentik/certs/saml-grist-sp/", target: "/certs/saml-grist-sp/", read_only: true }
       - { type: "volume", source: "grist-data", target: "/persist/" }
     environment:
       APP_HOME_URL: "https://${GRIST_DOMAIN:?}"
       APP_DOC_URL: "https://${GRIST_DOMAIN:?}"
       APP_STATIC_URL: "https://${GRIST_DOMAIN:?}"
-      APP_STATIC_INCLUDE_CUSTOM_CSS: "true"
       GRIST_DOMAIN: "${GRIST_DOMAIN:?}"
       GRIST_SINGLE_ORG: "${GRIST_SINGLE_ORG:-}"
       GRIST_ORG_IN_PATH: "${GRIST_ORG_IN_PATH:-true}"
@@ -123,7 +123,7 @@ services:
       GRIST_SUPPORT_ANON: "${GRIST_SUPPORT_ANON:-false}"
       GRIST_ANON_PLAYGROUND: "${GRIST_ANON_PLAYGROUND:-false}"
       GRIST_DEFAULT_PRODUCT: "${GRIST_DEFAULT_PRODUCT:-Free}"
-      GRIST_HIDE_UI_ELEMENTS: "${GRIST_HIDE_UI_ELEMENTS:-helpCenter,billing,templates,multiAccounts,sendToDrive,tutorials,supportGrist}"
+      GRIST_HIDE_UI_ELEMENTS: "${GRIST_HIDE_UI_ELEMENTS:-helpCenter,billing,templates,createSite,multiSite,multiAccounts,sendToDrive,tutorials,supportGrist}"
       GRIST_LIST_PUBLIC_SITES: "${GRIST_LIST_PUBLIC_SITES:-false}"
       GRIST_MAX_UPLOAD_ATTACHMENT_MB: "${GRIST_MAX_UPLOAD_ATTACHMENT_MB:-100}"
       GRIST_MAX_UPLOAD_IMPORT_MB: "${GRIST_MAX_UPLOAD_IMPORT_MB:-500}"
