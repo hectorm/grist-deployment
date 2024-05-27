@@ -22,7 +22,6 @@ if ! mc stat local/grist >/dev/null 2>&1; then
 	mc anonymous set private local/grist
 	mc version enable local/grist
 	mc ilm rule add local/grist \
-		--noncurrent-expire-newer 10 \
 		--noncurrent-expire-days 30 \
 		--expire-delete-marker
 fi
