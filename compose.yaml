@@ -189,9 +189,8 @@ services:
       - "private"
     volumes: &authentik-volumes
       - { type: "bind", source: "./config/authentik/blueprints/", target: "/blueprints/custom/", read_only: true }
-      - { type: "bind", source: "./config/authentik/web/dist/custom.css", target: "/web/dist/custom.css", read_only: true }
       - { type: "bind", source: "./config/authentik/web/dist/custom/", target: "/web/dist/custom/", read_only: true }
-      - { type: "bind", source: "./config/authentik/web/dist/custom/blank.jpg", target: "/web/dist/assets/images/flow_background.jpg", read_only: true }
+      - { type: "bind", source: "./config/authentik/web/dist/custom.css", target: "/web/dist/custom.css", read_only: true }
     environment: &authentik-environment
       AUTHENTIK_BOOTSTRAP_EMAIL: "${AUTHENTIK_BOOTSTRAP_EMAIL:?}"
       AUTHENTIK_BOOTSTRAP_PASSWORD: "${AUTHENTIK_BOOTSTRAP_PASSWORD:?}"

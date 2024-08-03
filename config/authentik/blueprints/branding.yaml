@@ -27,7 +27,7 @@ entries:
     model: "authentik_brands.brand"
     attrs:
       branding_title: "authentik"
-      branding_logo: "/static/dist/custom/blank.svg"
+      branding_logo: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='0' width='0' />"
       branding_favicon: "/static/dist/assets/icons/icon.png"
       attributes:
         settings:
