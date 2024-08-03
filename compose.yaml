@@ -18,7 +18,7 @@ x-minio-image: &minio-image "docker.io/minio/minio:RELEASE.2024-08-03T04-33-23Z"
 # https://hub.docker.com/r/minio/mc
 x-minio-mc-image: &minio-mc-image "docker.io/minio/mc:RELEASE.2024-07-31T15-58-33Z"
 # https://hub.docker.com/r/grafana/grafana
-x-grafana-image: &grafana-image "docker.io/grafana/grafana:11.0.0"
+x-grafana-image: &grafana-image "docker.io/grafana/grafana:11.1.1"
 # https://hub.docker.com/r/prom/prometheus
 x-prometheus-image: &prometheus-image "docker.io/prom/prometheus:v2.52.0"
 # https://hub.docker.com/_/postgres
