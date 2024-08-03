@@ -8,6 +8,9 @@ entryPoints:
   https:
     address: ":443/tcp"
     http3: { }
+    transport:
+      respondingTimeouts:
+        readTimeout: "600s"
   ldaps:
     address: ":636/tcp"
   postgres:
