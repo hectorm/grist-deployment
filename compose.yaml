@@ -6,7 +6,7 @@ x-traefik-image: &traefik-image "docker.io/traefik:3.1"
 # https://hub.docker.com/r/hectorm/proxy
 x-proxy-image: &proxy-image "docker.io/hectorm/proxy:v2"
 # https://hub.docker.com/r/gristlabs/grist
-x-grist-image: &grist-image "docker.io/gristlabs/grist:1.1.16"
+x-grist-image: &grist-image "docker.io/gristlabs/grist:1.1.18"
 # https://github.com/goauthentik/authentik/pkgs/container/server
 x-authentik-server-image: &authentik-server-image "ghcr.io/goauthentik/server:2024.8"
 # https://github.com/goauthentik/authentik/pkgs/container/proxy
@@ -138,6 +138,7 @@ services:
       GRIST_OIDC_IDP_CLIENT_ID: "grist"
       GRIST_OIDC_IDP_CLIENT_SECRET: "${GRIST_OAUTH_CLIENT_SECRET:?}"
       GRIST_OIDC_IDP_SCOPES: "openid email profile"
+      GRIST_OIDC_IDP_ENABLED_PROTECTIONS: "PKCE,STATE,NONCE"
       GRIST_DOCS_MINIO_ENDPOINT: "minio"
       GRIST_DOCS_MINIO_PORT: "9000"
       GRIST_DOCS_MINIO_USE_SSL: "0"
