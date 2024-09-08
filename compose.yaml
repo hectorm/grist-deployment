@@ -8,11 +8,11 @@ x-proxy-image: &proxy-image "docker.io/hectorm/proxy:v2"
 # https://hub.docker.com/r/gristlabs/grist
 x-grist-image: &grist-image "docker.io/gristlabs/grist:1.1.16"
 # https://github.com/goauthentik/authentik/pkgs/container/server
-x-authentik-server-image: &authentik-server-image "ghcr.io/goauthentik/server:2024.4"
+x-authentik-server-image: &authentik-server-image "ghcr.io/goauthentik/server:2024.8"
 # https://github.com/goauthentik/authentik/pkgs/container/proxy
-x-authentik-proxy-image: &authentik-proxy-image "ghcr.io/goauthentik/proxy:2024.4"
+x-authentik-proxy-image: &authentik-proxy-image "ghcr.io/goauthentik/proxy:2024.8"
 # https://github.com/goauthentik/authentik/pkgs/container/ldap
-x-authentik-ldap-image: &authentik-ldap-image "ghcr.io/goauthentik/ldap:2024.4"
+x-authentik-ldap-image: &authentik-ldap-image "ghcr.io/goauthentik/ldap:2024.8"
 # https://hub.docker.com/r/minio/minio
 x-minio-image: &minio-image "docker.io/minio/minio:RELEASE.2024-08-03T04-33-23Z"
 # https://hub.docker.com/r/minio/mc
