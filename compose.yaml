@@ -227,7 +227,19 @@ services:
       TRAEFIK_DOMAIN: "${TRAEFIK_DOMAIN:?}"
     command: ["server"]
     healthcheck:
-      test: ["CMD", "ak", "healthcheck"]
+      test:
+        - "CMD"
+        - "bash"
+        - "-euc"
+        - |
+          ak healthcheck
+          exec 3<>/dev/tcp/localhost/9000
+          printf '%s\r\n' \
+            'HEAD /application/o/grist/.well-known/openid-configuration HTTP/1.1' \
+            'Host: localhost:9000' \
+            'Connection: close' \
+            '' >&3
+          grep -Fq 'HTTP/1.1 200 OK' <&3
       start_period: "300s"
       interval: "30s"
       timeout: "10s"
