@@ -22,7 +22,7 @@ x-grafana-image: &grafana-image "docker.io/grafana/grafana:11.2.1"
 # https://hub.docker.com/r/prom/prometheus
 x-prometheus-image: &prometheus-image "docker.io/prom/prometheus:v2.54.1"
 # https://hub.docker.com/_/postgres
-x-postgres-image: &postgres-image "docker.io/postgres:16-bookworm"
+x-postgres-image: &postgres-image "docker.io/postgres:17-bookworm"
 # https://hub.docker.com/_/redis
 x-redis-image: &redis-image "docker.io/redis:7-bookworm"
 
