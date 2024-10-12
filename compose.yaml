@@ -70,6 +70,7 @@ services:
     healthcheck:
       test: ["CMD", "traefik", "healthcheck"]
       start_period: "120s"
+      start_interval: "5s"
       interval: "30s"
       timeout: "10s"
       retries: 2
@@ -165,6 +166,7 @@ services:
     healthcheck:
       test: ["CMD", "bash", "-euc", ">/dev/tcp/localhost/8484"]
       start_period: "120s"
+      start_interval: "5s"
       interval: "30s"
       timeout: "10s"
       retries: 2
@@ -241,6 +243,7 @@ services:
             '' >&3
           grep -Fq 'HTTP/1.1 200 OK' <&3
       start_period: "300s"
+      start_interval: "5s"
       interval: "30s"
       timeout: "10s"
       retries: 2
@@ -263,6 +266,7 @@ services:
     healthcheck:
       test: ["CMD", "ak", "healthcheck"]
       start_period: "300s"
+      start_interval: "5s"
       interval: "30s"
       timeout: "10s"
       retries: 2
@@ -290,6 +294,7 @@ services:
     healthcheck:
       test: ["CMD", "/proxy", "healthcheck"]
       start_period: "300s"
+      start_interval: "5s"
       interval: "30s"
       timeout: "10s"
       retries: 2
@@ -316,6 +321,7 @@ services:
     healthcheck:
       test: ["CMD", "/ldap", "healthcheck"]
       start_period: "300s"
+      start_interval: "5s"
       interval: "30s"
       timeout: "10s"
       retries: 2
@@ -347,6 +353,7 @@ services:
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       start_period: "120s"
+      start_interval: "5s"
       interval: "30s"
       timeout: "10s"
       retries: 2
@@ -415,6 +422,7 @@ services:
     healthcheck:
       test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:3000/api/health"]
       start_period: "120s"
+      start_interval: "5s"
       interval: "30s"
       timeout: "10s"
       retries: 2
@@ -441,6 +449,7 @@ services:
     healthcheck:
       test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:9090/-/healthy"]
       start_period: "120s"
+      start_interval: "5s"
       interval: "30s"
       timeout: "10s"
       retries: 2
@@ -463,6 +472,7 @@ services:
     healthcheck:
       test: ["CMD", "pg_isready", "-qU", "postgres"]
       start_period: "120s"
+      start_interval: "5s"
       interval: "30s"
       timeout: "10s"
       retries: 2
@@ -483,6 +493,7 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
       start_period: "120s"
+      start_interval: "5s"
       interval: "30s"
       timeout: "10s"
       retries: 2
@@ -503,6 +514,7 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
       start_period: "120s"
+      start_interval: "5s"
       interval: "30s"
       timeout: "10s"
       retries: 2
