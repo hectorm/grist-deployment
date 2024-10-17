@@ -4,7 +4,7 @@ name: "docs"
 # https://hub.docker.com/_/traefik
 x-traefik-image: &traefik-image "docker.io/traefik:3.1"
 # https://hub.docker.com/r/hectorm/proxy
-x-proxy-image: &proxy-image "docker.io/hectorm/proxy:v2"
+x-proxy-image: &proxy-image "docker.io/hectorm/proxy:v3"
 # https://hub.docker.com/r/gristlabs/grist
 x-grist-image: &grist-image "docker.io/gristlabs/grist:1.2.0"
 # https://github.com/goauthentik/authentik/pkgs/container/server
@@ -91,11 +91,11 @@ services:
           - "grafana.com"
     environment:
       PROXY_UPSTREAMS: |
-        api.getgrist.com:443
-        github.com:443
-        raw.githubusercontent.com:443
-        objects.githubusercontent.com:443
-        grafana.com:443
+        api.getgrist.com:443:tls
+        github.com:443:tls
+        raw.githubusercontent.com:443:tls
+        objects.githubusercontent.com:443:tls
+        grafana.com:443:tls
 
   grist:
     image: *grist-image
