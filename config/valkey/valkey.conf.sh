@@ -9,5 +9,5 @@ exec cat - <<-EOF
 	auto-aof-rewrite-min-size 16mb
 	auto-aof-rewrite-percentage 100
 	dir /data/
-	user default on ~* &* +@all -@admin >${REDISCLI_AUTH:?}
+	${REDISCLI_AUTH:+user default on ~* &* +@all -@admin >${REDISCLI_AUTH:?}}
 EOF

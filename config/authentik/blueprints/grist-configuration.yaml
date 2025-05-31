@@ -51,10 +51,12 @@ entries:
       name: "Grist"
       authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
       authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-explicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
       client_type: "confidential"
       client_id: "grist"
       client_secret: !Env GRIST_OAUTH_CLIENT_SECRET
-      redirect_uris: !Format [https://%s/.*, !Env GRIST_DOMAIN]
+      redirect_uris:
+        - { url: !Format [https://%s/.*, !Env GRIST_DOMAIN], matching_mode: "regex" }
       signing_key: !Find [authentik_crypto.certificatekeypair, [name, JWT certificate]]
       access_code_validity: "minutes=1"
       access_token_validity: "minutes=5"

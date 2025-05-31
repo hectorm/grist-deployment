@@ -36,6 +36,10 @@ export LC_ALL='C'
 		'DNS:minio.example.localhost' \
 		'DNS:grafana.example.localhost' \
 		'DNS:prometheus.example.localhost' \
+		'DNS:postgres.example.localhost' \
+		'DNS:localhost' \
+		'IP:127.0.0.1' \
+		'IP:::1' \
 	| paste -sd, -)
 	SERVER_CRT_VALIDITY_DAYS='7300'
 	SERVER_CRT_RENOVATION_DAYS='30'

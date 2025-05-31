@@ -27,8 +27,23 @@ entries:
     model: "authentik_brands.brand"
     attrs:
       branding_title: "authentik"
-      branding_logo: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='0' width='0' />"
+      branding_logo: "/static/dist/custom/blank.png"
+      branding_default_flow_background: "/static/dist/custom/blank.png"
       branding_favicon: "/static/dist/assets/icons/icon.png"
+      branding_custom_css: |
+        .pf-c-login__main-header.pf-c-brand.ak-brand {
+          display: none;
+        }
+
+        .ak-login-container {
+          gap: 1rem;
+          justify-content: center;
+        }
+
+        .pf-c-login__main, .pf-c-login__footer {
+          margin: 0;
+          flex: 0;
+        }
       attributes:
         settings:
           enabledFeatures:

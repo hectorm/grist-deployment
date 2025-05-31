@@ -51,6 +51,7 @@ entries:
       name: "Prometheus"
       authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
       authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-explicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
       mode: "forward_single"
       external_host: !Format [https://%s, !Env PROMETHEUS_DOMAIN]
       access_token_validity: "hours=24"

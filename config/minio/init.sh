@@ -2,8 +2,8 @@
 
 set -eu
 
-mc config host rm local/ >/dev/null 2>&1 ||:
-printenv MINIO_ROOT_PASSWORD | mc config host add --api S3v4 local/ "http://minio:9000" minio
+mc alias rm local >/dev/null 2>&1 ||:
+printenv MINIO_ROOT_PASSWORD | mc alias set --api S3v4 local "http://minio:9000" minio
 
 for policy_file in /policies/*.json; do
 	policy_name="$(basename "${policy_file:?}" .json)"

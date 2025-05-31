@@ -1,8 +1,8 @@
-# yaml-language-server: $schema=https://json.schemastore.org/traefik-v2-file-provider.json
+# yaml-language-server: $schema=https://json.schemastore.org/traefik-v3-file-provider.json
 tls:
   options:
     default:
-      minVersion: "VersionTLS12"
+      minVersion: "VersionTLS13"
       # {{ if or ( env "TRAEFIK_TLS_RESOLVER" ) ( env "TRAEFIK_TLS_CERT" ) }}
       sniStrict: true
       # {{ end }}
@@ -14,6 +14,8 @@ tls:
           - '{{ $v }}'
           # {{ end }}
       # {{ end }}
+    postgres:
+      alpnProtocols: ["postgresql"]
   # {{ if env "TRAEFIK_TLS_CERT" }}
   certificates:
     - keyFile: '{{ env "TRAEFIK_TLS_KEY" }}'
@@ -203,6 +205,9 @@ tcp:
       rule: 'HostSNI(`*`)'
       entryPoints: ["postgres"]
       service: "postgres"
+      tls:
+        certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
+        options: "postgres"
   services:
     authentik-ldap:
       loadBalancer:

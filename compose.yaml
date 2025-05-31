@@ -2,29 +2,29 @@
 name: "docs"
 
 # https://hub.docker.com/_/traefik
-x-traefik-image: &traefik-image "docker.io/traefik:3.1"
+x-traefik-image: &traefik-image "docker.io/traefik:3.4"
 # https://hub.docker.com/r/hectorm/proxy
 x-proxy-image: &proxy-image "docker.io/hectorm/proxy:v3"
 # https://hub.docker.com/r/gristlabs/grist
-x-grist-image: &grist-image "docker.io/gristlabs/grist:1.2.0"
+x-grist-image: &grist-image "docker.io/gristlabs/grist:1.6.0"
 # https://github.com/goauthentik/authentik/pkgs/container/server
-x-authentik-server-image: &authentik-server-image "ghcr.io/goauthentik/server:2024.8"
+x-authentik-server-image: &authentik-server-image "ghcr.io/goauthentik/server:2025.4"
 # https://github.com/goauthentik/authentik/pkgs/container/proxy
-x-authentik-proxy-image: &authentik-proxy-image "ghcr.io/goauthentik/proxy:2024.8"
+x-authentik-proxy-image: &authentik-proxy-image "ghcr.io/goauthentik/proxy:2025.4"
 # https://github.com/goauthentik/authentik/pkgs/container/ldap
-x-authentik-ldap-image: &authentik-ldap-image "ghcr.io/goauthentik/ldap:2024.8"
+x-authentik-ldap-image: &authentik-ldap-image "ghcr.io/goauthentik/ldap:2025.4"
 # https://hub.docker.com/r/minio/minio
-x-minio-image: &minio-image "docker.io/minio/minio:RELEASE.2024-09-22T00-33-43Z"
+x-minio-image: &minio-image "docker.io/minio/minio:RELEASE.2025-04-22T22-12-26Z"
 # https://hub.docker.com/r/minio/mc
-x-minio-mc-image: &minio-mc-image "docker.io/minio/mc:RELEASE.2024-09-16T17-43-14Z"
+x-minio-mc-image: &minio-mc-image "docker.io/minio/mc:RELEASE.2025-05-21T01-59-54Z"
 # https://hub.docker.com/r/grafana/grafana
-x-grafana-image: &grafana-image "docker.io/grafana/grafana:11.2.1"
+x-grafana-image: &grafana-image "docker.io/grafana/grafana:12.0.1"
 # https://hub.docker.com/r/prom/prometheus
-x-prometheus-image: &prometheus-image "docker.io/prom/prometheus:v2.54.1"
+x-prometheus-image: &prometheus-image "docker.io/prom/prometheus:v3.4.1"
 # https://hub.docker.com/_/postgres
 x-postgres-image: &postgres-image "docker.io/postgres:17-bookworm"
-# https://hub.docker.com/_/redis
-x-redis-image: &redis-image "docker.io/redis:7-bookworm"
+# https://hub.docker.com/r/valkey/valkey
+x-valkey-image: &valkey-image "docker.io/valkey/valkey:8-bookworm"
 
 services:
 
@@ -149,16 +149,9 @@ services:
       GRIST_DOCS_MINIO_SECRET_KEY: "${MINIO_GRIST_PASSWORD:?}"
       TYPEORM_TYPE: "sqlite"
       TYPEORM_DATABASE: "/persist/home.sqlite3"
-      REDIS_URL: "redis://:${REDIS_GRIST_PASSWORD:?}@redis-grist:6379/1"
-      ASSISTANT_API_KEY: "${ASSISTANT_API_KEY:-}"
-      ASSISTANT_CHAT_COMPLETION_ENDPOINT: "${ASSISTANT_CHAT_COMPLETION_ENDPOINT:-}"
-      ASSISTANT_MODEL: "${ASSISTANT_MODEL:-}"
-      ASSISTANT_LONGER_CONTEXT_MODEL: "${ASSISTANT_LONGER_CONTEXT_MODEL:-}"
-      ASSISTANT_MAX_TOKENS: "${ASSISTANT_MAX_TOKENS:-}"
-      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
-      HUGGINGFACE_API_KEY: "${HUGGINGFACE_API_KEY:-}"
-      COMPLETION_MODEL: "${COMPLETION_MODEL:-}"
-      COMPLETION_URL: "${COMPLETION_URL:-}"
+      GRIST_SQLITE_MODE: "${GRIST_SQLITE_MODE:-wal}"
+      GRIST_EXTERNAL_ATTACHMENTS_MODE: "${GRIST_EXTERNAL_ATTACHMENTS_MODE:-snapshots}"
+      REDIS_URL: "redis://:${VALKEY_GRIST_PASSWORD:?}@valkey-grist:6379/1"
       GRIST_PROMCLIENT_PORT: "9090"
       # Set to "0" to disable certificate validation.
       # WARNING, changing this value is unsafe and should only be used for testing purposes.
@@ -179,7 +172,7 @@ services:
         condition: "service_healthy"
       minio-init:
         condition: "service_completed_successfully"
-      redis-grist:
+      valkey-grist:
         condition: "service_healthy"
       proxy:
         condition: "service_healthy"
@@ -194,7 +187,6 @@ services:
     volumes: &authentik-volumes
       - { type: "bind", source: "./config/authentik/blueprints/", target: "/blueprints/custom/", read_only: true }
       - { type: "bind", source: "./config/authentik/web/dist/custom/", target: "/web/dist/custom/", read_only: true }
-      - { type: "bind", source: "./config/authentik/web/dist/custom.css", target: "/web/dist/custom.css", read_only: true }
     environment: &authentik-environment
       AUTHENTIK_BOOTSTRAP_EMAIL: "${AUTHENTIK_BOOTSTRAP_EMAIL:?}"
       AUTHENTIK_BOOTSTRAP_PASSWORD: "${AUTHENTIK_BOOTSTRAP_PASSWORD:?}"
@@ -207,9 +199,9 @@ services:
       AUTHENTIK_EMAIL__USE_TLS: "${AUTHENTIK_EMAIL_USE_TLS:-false}"
       AUTHENTIK_EMAIL__USE_SSL: "${AUTHENTIK_EMAIL_USE_SSL:-true}"
       AUTHENTIK_EMAIL__FROM: "${AUTHENTIK_EMAIL_FROM:-${AUTHENTIK_EMAIL_USERNAME:-}}"
-      AUTHENTIK_REDIS__HOST: "redis-authentik"
+      AUTHENTIK_REDIS__HOST: "valkey-authentik"
       AUTHENTIK_REDIS__PORT: "6379"
-      AUTHENTIK_REDIS__PASSWORD: "${REDIS_AUTHENTIK_PASSWORD:?}"
+      AUTHENTIK_REDIS__PASSWORD: "${VALKEY_AUTHENTIK_PASSWORD:?}"
       AUTHENTIK_REDIS__DB: "1"
       AUTHENTIK_POSTGRESQL__HOST: "postgres"
       AUTHENTIK_POSTGRESQL__PORT: "5432"
@@ -250,7 +242,7 @@ services:
     depends_on:
       postgres:
         condition: "service_healthy"
-      redis-authentik:
+      valkey-authentik:
         condition: "service_healthy"
 
   authentik-worker:
@@ -273,7 +265,7 @@ services:
     depends_on:
       postgres:
         condition: "service_healthy"
-      redis-authentik:
+      valkey-authentik:
         condition: "service_healthy"
 
   authentik-proxy:
@@ -287,9 +279,9 @@ services:
       AUTHENTIK_HOST: "http://authentik-server:9000"
       AUTHENTIK_HOST_BROWSER: "https://${AUTHENTIK_DOMAIN:?}"
       AUTHENTIK_TOKEN: "${AUTHENTIK_BOOTSTRAP_TOKEN:?}"
-      AUTHENTIK_REDIS__HOST: "redis-authentik"
+      AUTHENTIK_REDIS__HOST: "valkey-authentik"
       AUTHENTIK_REDIS__PORT: "6379"
-      AUTHENTIK_REDIS__PASSWORD: "${REDIS_AUTHENTIK_PASSWORD:?}"
+      AUTHENTIK_REDIS__PASSWORD: "${VALKEY_AUTHENTIK_PASSWORD:?}"
       AUTHENTIK_REDIS__DB: "1"
     healthcheck:
       test: ["CMD", "/proxy", "healthcheck"]
@@ -314,9 +306,9 @@ services:
     environment:
       AUTHENTIK_HOST: "http://authentik-server:9000"
       AUTHENTIK_TOKEN: "${AUTHENTIK_BOOTSTRAP_TOKEN:?}"
-      AUTHENTIK_REDIS__HOST: "redis-authentik"
+      AUTHENTIK_REDIS__HOST: "valkey-authentik"
       AUTHENTIK_REDIS__PORT: "6379"
-      AUTHENTIK_REDIS__PASSWORD: "${REDIS_AUTHENTIK_PASSWORD:?}"
+      AUTHENTIK_REDIS__PASSWORD: "${VALKEY_AUTHENTIK_PASSWORD:?}"
       AUTHENTIK_REDIS__DB: "1"
     healthcheck:
       test: ["CMD", "/ldap", "healthcheck"]
@@ -477,42 +469,42 @@ services:
       timeout: "10s"
       retries: 2
 
-  redis-grist:
-    image: *redis-image
+  valkey-grist:
+    image: *valkey-image
     restart: "always"
-    container_name: "docs-redis-grist"
-    hostname: "redis-grist"
+    container_name: "docs-valkey-grist"
+    hostname: "valkey-grist"
     networks:
       - "private"
     volumes:
-      - { type: "bind", source: "./config/redis/redis.conf.sh", target: "/etc/redis/redis.conf.sh", read_only: true }
-      - { type: "volume", source: "redis-grist-data", target: "/data/" }
+      - { type: "bind", source: "./config/valkey/valkey.conf.sh", target: "/etc/valkey/valkey.conf.sh", read_only: true }
+      - { type: "volume", source: "valkey-grist-data", target: "/data/" }
     environment:
-      REDISCLI_AUTH: "${REDIS_GRIST_PASSWORD:?}"
-    command: ["sh", "-euc", "sh /etc/redis/redis.conf.sh | exec redis-server -"]
+      REDISCLI_AUTH: "${VALKEY_GRIST_PASSWORD:?}"
+    command: ["sh", "-euc", "sh /etc/valkey/valkey.conf.sh | exec valkey-server -"]
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      test: ["CMD-SHELL", "valkey-cli ping | grep -q PONG"]
       start_period: "120s"
       start_interval: "5s"
       interval: "30s"
       timeout: "10s"
       retries: 2
 
-  redis-authentik:
-    image: *redis-image
+  valkey-authentik:
+    image: *valkey-image
     restart: "always"
-    container_name: "docs-redis-authentik"
-    hostname: "redis-authentik"
+    container_name: "docs-valkey-authentik"
+    hostname: "valkey-authentik"
     networks:
       - "private"
     volumes:
-      - { type: "bind", source: "./config/redis/redis.conf.sh", target: "/etc/redis/redis.conf.sh", read_only: true }
-      - { type: "volume", source: "redis-authentik-data", target: "/data/" }
+      - { type: "bind", source: "./config/valkey/valkey.conf.sh", target: "/etc/valkey/valkey.conf.sh", read_only: true }
+      - { type: "volume", source: "valkey-authentik-data", target: "/data/" }
     environment:
-      REDISCLI_AUTH: "${REDIS_AUTHENTIK_PASSWORD:?}"
-    command: ["sh", "-euc", "sh /etc/redis/redis.conf.sh | exec redis-server -"]
+      REDISCLI_AUTH: "${VALKEY_AUTHENTIK_PASSWORD:?}"
+    command: ["sh", "-euc", "sh /etc/valkey/valkey.conf.sh | exec valkey-server -"]
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      test: ["CMD-SHELL", "valkey-cli ping | grep -q PONG"]
       start_period: "120s"
       start_interval: "5s"
       interval: "30s"
@@ -539,11 +531,11 @@ volumes:
   postgres-data:
     name: "docs-postgres-data"
 
-  redis-grist-data:
-    name: "docs-redis-grist-data"
+  valkey-grist-data:
+    name: "docs-valkey-grist-data"
 
-  redis-authentik-data:
-    name: "docs-redis-authentik-data"
+  valkey-authentik-data:
+    name: "docs-valkey-authentik-data"
 
 networks:
 

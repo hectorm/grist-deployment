@@ -43,7 +43,7 @@ entries:
       path: "goauthentik.io/service-accounts"
       attributes:
         goauthentik.io/user/service-account: true
-        goauthentik.io/user/override-ips: true
+        goauthentik.io/user/token-expires: false
       groups:
         - !Find [authentik_core.group, [name, ldap]]
   # LDAP service account app password
@@ -82,6 +82,7 @@ entries:
         - "email"
       password_stage: !KeyOf ldap-authentication-password
       case_insensitive_matching: true
+      pretend_user_exists: true
       show_matched_user: true
   # LDAP authentication login stage
   - id: "ldap-authentication-login"
@@ -111,7 +112,8 @@ entries:
       target: !KeyOf ldap-authentication-flow
       stage: !KeyOf ldap-authentication-identification
       order: 10
-      re_evaluate_policies: true
+      evaluate_on_plan: true
+      re_evaluate_policies: false
       invalid_response_action: "retry"
       policy_engine_mode: "any"
   # LDAP authentication flow login stage binding
@@ -120,7 +122,8 @@ entries:
       target: !KeyOf ldap-authentication-flow
       stage: !KeyOf ldap-authentication-login
       order: 30
-      re_evaluate_policies: true
+      evaluate_on_plan: true
+      re_evaluate_policies: false
       invalid_response_action: "retry"
       policy_engine_mode: "any"
   # LDAP provider
@@ -131,8 +134,10 @@ entries:
     attrs:
       name: "LDAP"
       authorization_flow: !KeyOf ldap-authentication-flow
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
       search_group: !KeyOf ldap-group
     # certificate: !Find [authentik_crypto.certificatekeypair, [name, LDAP certificate]]
+      mfa_support: true
       bind_mode: "direct"
       search_mode: "direct"
       base_dn: "DC=ldap,DC=goauthentik,DC=io"
