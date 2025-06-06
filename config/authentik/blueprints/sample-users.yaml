@@ -19,7 +19,7 @@ entries:
     model: "authentik_core.user"
     attrs:
       username: "alice"
-      name: "Alice (Sample)"
+      name: "Alice Bennett"
       email: "alice@example.localhost"
       password: "password"
       is_active: true
@@ -32,7 +32,7 @@ entries:
     model: "authentik_core.user"
     attrs:
       username: "bob"
-      name: "Bob (Sample)"
+      name: "Bob Collins"
       email: "bob@example.localhost"
       password: "password"
       is_active: true
@@ -45,47 +45,47 @@ entries:
     model: "authentik_core.user"
     attrs:
       username: "carol"
-      name: "Carol (Sample)"
+      name: "Carol Davis"
       email: "carol@example.localhost"
       password: "password"
       is_active: true
       path: "users"
       groups:
         - !Find [authentik_core.group, [name, person]]
-  - id: "sample-user-charlie"
+  - id: "sample-user-dan"
     identifiers:
-      username: "charlie"
+      username: "dan"
     model: "authentik_core.user"
     attrs:
-      username: "charlie"
-      name: "Charlie (Sample)"
-      email: "charlie@example.localhost"
+      username: "dan"
+      name: "Dan Edwards"
+      email: "dan@example.localhost"
       password: "password"
       is_active: true
       path: "users"
       groups:
         - !Find [authentik_core.group, [name, person]]
-  - id: "sample-user-david"
+  - id: "sample-user-erin"
     identifiers:
-      username: "david"
+      username: "erin"
     model: "authentik_core.user"
     attrs:
-      username: "david"
-      name: "David (Sample)"
-      email: "david@example.localhost"
+      username: "erin"
+      name: "Erin Fisher"
+      email: "erin@example.localhost"
       password: "password"
       is_active: true
       path: "users"
       groups:
         - !Find [authentik_core.group, [name, person]]
-  - id: "sample-user-judy"
+  - id: "sample-user-frank"
     identifiers:
-      username: "judy"
+      username: "frank"
     model: "authentik_core.user"
     attrs:
-      username: "judy"
-      name: "Judy (Sample)"
-      email: "judy@example.localhost"
+      username: "frank"
+      name: "Frank Graham"
+      email: "frank@example.localhost"
       password: "password"
       is_active: true
       path: "users"
