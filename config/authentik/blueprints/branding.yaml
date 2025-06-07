@@ -27,6 +27,14 @@ entries:
     model: "authentik_brands.brand"
     attrs:
       branding_title: "authentik"
+      attributes:
+        settings:
+          enabledFeatures:
+            settings: true
+            notificationDrawer: true
+            applicationEdit: false
+            apiDrawer: false
+            search: false
   # Apply branding to default authentication flow
   - id: "default-authentication-flow"
     identifiers:
