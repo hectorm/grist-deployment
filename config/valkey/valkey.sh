@@ -1,6 +1,6 @@
 #!/bin/sh
 
-exec cat - <<-EOF
+exec valkey-server - <<-EOF
 	bind 0.0.0.0
 	loglevel warning
 	save 60 1

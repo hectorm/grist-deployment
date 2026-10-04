@@ -22,7 +22,7 @@ x-prometheus-image: &prometheus-image "docker.io/prom/prometheus:v3.15.0"
 # https://hub.docker.com/_/postgres
 x-postgres-image: &postgres-image "docker.io/postgres:18-trixie"
 # https://hub.docker.com/r/valkey/valkey
-x-valkey-image: &valkey-image "docker.io/valkey/valkey:8-trixie"
+x-valkey-image: &valkey-image "docker.io/valkey/valkey:9-trixie"
 
 services:
 
@@ -459,11 +459,11 @@ services:
     networks:
       - "private"
     volumes:
-      - { type: "bind", source: "./config/valkey/valkey.conf.sh", target: "/etc/valkey/valkey.conf.sh", read_only: true }
+      - { type: "bind", source: "./config/valkey/valkey.sh", target: "/etc/valkey/valkey.sh", read_only: true }
       - { type: "volume", source: "valkey-grist-data", target: "/data/" }
     environment:
       REDISCLI_AUTH: "${VALKEY_GRIST_PASSWORD:?}"
-    command: ["sh", "-euc", "sh /etc/valkey/valkey.conf.sh | exec valkey-server -"]
+    command: ["sh", "/etc/valkey/valkey.sh"]
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep -q PONG"]
       start_period: "120s"
