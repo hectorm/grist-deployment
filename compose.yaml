@@ -2,29 +2,27 @@
 name: "docs"
 
 # https://hub.docker.com/_/traefik
-x-traefik-image: &traefik-image "docker.io/traefik:3.4"
+x-traefik-image: &traefik-image "docker.io/traefik:3.7"
 # https://hub.docker.com/r/hectorm/proxy
 x-proxy-image: &proxy-image "docker.io/hectorm/proxy:v3"
 # https://hub.docker.com/r/gristlabs/grist
-x-grist-image: &grist-image "docker.io/gristlabs/grist:1.6.0"
+x-grist-image: &grist-image "docker.io/gristlabs/grist:1.7.20"
 # https://github.com/goauthentik/authentik/pkgs/container/server
-x-authentik-server-image: &authentik-server-image "ghcr.io/goauthentik/server:2025.6"
-# https://github.com/goauthentik/authentik/pkgs/container/proxy
-x-authentik-proxy-image: &authentik-proxy-image "ghcr.io/goauthentik/proxy:2025.6"
+x-authentik-server-image: &authentik-server-image "ghcr.io/goauthentik/server:2026.8.3"
 # https://github.com/goauthentik/authentik/pkgs/container/ldap
-x-authentik-ldap-image: &authentik-ldap-image "ghcr.io/goauthentik/ldap:2025.6"
-# https://hub.docker.com/r/minio/minio
-x-minio-image: &minio-image "docker.io/minio/minio:RELEASE.2025-04-22T22-12-26Z"
-# https://hub.docker.com/r/minio/mc
-x-minio-mc-image: &minio-mc-image "docker.io/minio/mc:RELEASE.2025-05-21T01-59-54Z"
+x-authentik-ldap-image: &authentik-ldap-image "ghcr.io/goauthentik/ldap:2026.8.3"
+# https://hub.docker.com/r/pgsty/silo
+x-silo-image: &silo-image "docker.io/pgsty/silo:RELEASE.2026-09-16T00-00-00Z"
+# https://hub.docker.com/r/pgsty/mc
+x-silo-mc-image: &silo-mc-image "docker.io/pgsty/mc:RELEASE.2026-09-16T00-00-00Z"
 # https://hub.docker.com/r/grafana/grafana
-x-grafana-image: &grafana-image "docker.io/grafana/grafana:12.0.1"
+x-grafana-image: &grafana-image "docker.io/grafana/grafana:13.2.3"
 # https://hub.docker.com/r/prom/prometheus
-x-prometheus-image: &prometheus-image "docker.io/prom/prometheus:v3.4.1"
+x-prometheus-image: &prometheus-image "docker.io/prom/prometheus:v3.15.0"
 # https://hub.docker.com/_/postgres
-x-postgres-image: &postgres-image "docker.io/postgres:17-bookworm"
+x-postgres-image: &postgres-image "docker.io/postgres:18-trixie"
 # https://hub.docker.com/r/valkey/valkey
-x-valkey-image: &valkey-image "docker.io/valkey/valkey:8-bookworm"
+x-valkey-image: &valkey-image "docker.io/valkey/valkey:8-trixie"
 
 services:
 
@@ -39,7 +37,7 @@ services:
         aliases:
           - "${GRIST_DOMAIN:?}"
           - "${AUTHENTIK_DOMAIN:?}"
-          - "${MINIO_DOMAIN:?}"
+          - "${SILO_DOMAIN:?}"
           - "${GRAFANA_DOMAIN:?}"
           - "${PROMETHEUS_DOMAIN:?}"
           - "${TRAEFIK_DOMAIN:?}"
@@ -61,7 +59,7 @@ services:
       TRAEFIK_MTLS_CERTS: "${TRAEFIK_MTLS_CERTS:-}"
       GRIST_DOMAIN: "${GRIST_DOMAIN:?}"
       AUTHENTIK_DOMAIN: "${AUTHENTIK_DOMAIN:?}"
-      MINIO_DOMAIN: "${MINIO_DOMAIN:?}"
+      SILO_DOMAIN: "${SILO_DOMAIN:?}"
       GRAFANA_DOMAIN: "${GRAFANA_DOMAIN:?}"
       PROMETHEUS_DOMAIN: "${PROMETHEUS_DOMAIN:?}"
       TRAEFIK_DOMAIN: "${TRAEFIK_DOMAIN:?}"
@@ -88,14 +86,14 @@ services:
           - "github.com"
           - "raw.githubusercontent.com"
           - "objects.githubusercontent.com"
-          - "grafana.com"
+          - "release-assets.githubusercontent.com"
     environment:
       PROXY_UPSTREAMS: |
         api.getgrist.com:443:tls
         github.com:443:tls
         raw.githubusercontent.com:443:tls
         objects.githubusercontent.com:443:tls
-        grafana.com:443:tls
+        release-assets.githubusercontent.com:443:tls
 
   grist:
     image: *grist-image
@@ -117,47 +115,57 @@ services:
       GRIST_SUPPORT_EMAIL: "${GRIST_SUPPORT_EMAIL:-support@${GRIST_DOMAIN:?}}"
       GRIST_SESSION_COOKIE: "${GRIST_SESSION_COOKIE:-grist_session}"
       GRIST_SESSION_SECRET: "${GRIST_SESSION_SECRET:?}"
-      GRIST_BOOT_KEY: "${GRIST_BOOT_KEY:?}"
       COOKIE_MAX_AGE: "${COOKIE_MAX_AGE:-none}"
+      GRIST_BOOT_KEY: "${GRIST_BOOT_KEY:-}"
+      GRIST_IN_SERVICE: "${GRIST_IN_SERVICE:-true}"
       GRIST_FORCE_LOGIN: "${GRIST_FORCE_LOGIN:-true}"
       GRIST_SUPPORT_ANON: "${GRIST_SUPPORT_ANON:-false}"
       GRIST_ANON_PLAYGROUND: "${GRIST_ANON_PLAYGROUND:-false}"
+      GRIST_PERSONAL_ORGS: "${GRIST_PERSONAL_ORGS:-true}"
+      GRIST_ORG_CREATION_ANYONE: "${GRIST_ORG_CREATION_ANYONE:-false}"
+      GRIST_ENABLE_SERVICE_ACCOUNTS: "${GRIST_ENABLE_SERVICE_ACCOUNTS:-false}"
+      GRIST_MCP_ENABLED: "${GRIST_MCP_ENABLED:-false}"
       GRIST_DEFAULT_PRODUCT: "${GRIST_DEFAULT_PRODUCT:-Free}"
       GRIST_HIDE_UI_ELEMENTS: "${GRIST_HIDE_UI_ELEMENTS:-helpCenter,billing,templates,createSite,multiSite,multiAccounts,sendToDrive,tutorials,supportGrist}"
       GRIST_LIST_PUBLIC_SITES: "${GRIST_LIST_PUBLIC_SITES:-false}"
       GRIST_MAX_UPLOAD_ATTACHMENT_MB: "${GRIST_MAX_UPLOAD_ATTACHMENT_MB:-100}"
       GRIST_MAX_UPLOAD_IMPORT_MB: "${GRIST_MAX_UPLOAD_IMPORT_MB:-500}"
+      GRIST_REQUEST_TIMEOUT_MS: "${GRIST_REQUEST_TIMEOUT_MS:-600000}"
       GRIST_PAGE_TITLE_SUFFIX: "${GRIST_PAGE_TITLE_SUFFIX:-_blank}"
+      GRIST_DEFAULT_LOCALE: "${GRIST_DEFAULT_LOCALE:-en-US}"
       GRIST_WIDGET_LIST_URL: "${GRIST_WIDGET_LIST_URL:-https://github.com/gristlabs/grist-widget/releases/download/latest/manifest.json}"
-      GRIST_EXPERIMENTAL_PLUGINS: "${GRIST_EXPERIMENTAL_PLUGINS:-1}"
       GRIST_TELEMETRY_LEVEL: "${GRIST_TELEMETRY_LEVEL:-off}"
+      GRIST_ALLOW_AUTOMATIC_VERSION_CHECKING: "${GRIST_ALLOW_AUTOMATIC_VERSION_CHECKING:-false}"
       GRIST_THROTTLE_CPU: "${GRIST_THROTTLE_CPU:-true}"
       GRIST_SANDBOX_FLAVOR: "${GRIST_SANDBOX_FLAVOR:-gvisor}"
-      PYTHON_VERSION: "${PYTHON_VERSION:-3}"
-      PYTHON_VERSION_ON_CREATION: "${PYTHON_VERSION_ON_CREATION:-3}"
       GRIST_OIDC_IDP_ISSUER: "https://${AUTHENTIK_DOMAIN:?}/application/o/grist/.well-known/openid-configuration"
       GRIST_OIDC_IDP_CLIENT_ID: "grist"
       GRIST_OIDC_IDP_CLIENT_SECRET: "${GRIST_OAUTH_CLIENT_SECRET:?}"
       GRIST_OIDC_IDP_SCOPES: "openid email profile"
       GRIST_OIDC_IDP_ENABLED_PROTECTIONS: "PKCE,STATE,NONCE"
-      GRIST_DOCS_MINIO_ENDPOINT: "minio"
-      GRIST_DOCS_MINIO_PORT: "9000"
-      GRIST_DOCS_MINIO_USE_SSL: "0"
-      GRIST_DOCS_MINIO_BUCKET: "grist"
-      GRIST_DOCS_MINIO_BUCKET_REGION: "us-east-1"
-      GRIST_DOCS_MINIO_ACCESS_KEY: "grist"
-      GRIST_DOCS_MINIO_SECRET_KEY: "${MINIO_GRIST_PASSWORD:?}"
+      GRIST_DOCS_S3_ENDPOINT: "silo"
+      GRIST_DOCS_S3_PORT: "9000"
+      GRIST_DOCS_S3_USE_SSL: "0"
+      GRIST_DOCS_S3_BUCKET: "grist"
+      GRIST_DOCS_S3_BUCKET_REGION: "us-east-1"
+      GRIST_DOCS_S3_ACCESS_KEY: "grist"
+      GRIST_DOCS_S3_SECRET_KEY: "${SILO_GRIST_PASSWORD:?}"
+      GRIST_SNAPSHOT_TIME_CAP: '${GRIST_SNAPSHOT_TIME_CAP:-{"hour": 25, "day": 32, "isoWeek": 12, "month": 96, "year": 1000}}'
+      GRIST_SNAPSHOT_KEEP: "${GRIST_SNAPSHOT_KEEP:-5}"
+      GRIST_EXTERNAL_ATTACHMENTS_MODE: "${GRIST_EXTERNAL_ATTACHMENTS_MODE:-snapshots}"
+      GRIST_ATTACHMENTS_THRESHOLD_MB: "${GRIST_ATTACHMENTS_THRESHOLD_MB:-50}"
       TYPEORM_TYPE: "sqlite"
       TYPEORM_DATABASE: "/persist/home.sqlite3"
       GRIST_SQLITE_MODE: "${GRIST_SQLITE_MODE:-wal}"
-      GRIST_EXTERNAL_ATTACHMENTS_MODE: "${GRIST_EXTERNAL_ATTACHMENTS_MODE:-snapshots}"
       REDIS_URL: "redis://:${VALKEY_GRIST_PASSWORD:?}@valkey-grist:6379/1"
+      GRIST_LOG_LEVEL: "${GRIST_LOG_LEVEL:-info}"
+      GRIST_LOG_AS_JSON: "${GRIST_LOG_AS_JSON:-false}"
       GRIST_PROMCLIENT_PORT: "9090"
       # Set to "0" to disable certificate validation.
       # WARNING, changing this value is unsafe and should only be used for testing purposes.
       NODE_TLS_REJECT_UNAUTHORIZED: "${GRIST_NODE_TLS_REJECT_UNAUTHORIZED:-1}"
     healthcheck:
-      test: ["CMD", "bash", "-euc", ">/dev/tcp/localhost/8484"]
+      test: ["CMD", "curl", "-fsSo", "/dev/null", "http://localhost:8484/status"]
       start_period: "120s"
       start_interval: "5s"
       interval: "30s"
@@ -168,9 +176,9 @@ services:
         condition: "service_healthy"
       authentik-worker:
         condition: "service_healthy"
-      minio:
+      silo:
         condition: "service_healthy"
-      minio-init:
+      silo-init:
         condition: "service_completed_successfully"
       valkey-grist:
         condition: "service_healthy"
@@ -188,10 +196,14 @@ services:
       - { type: "bind", source: "./config/authentik/blueprints/", target: "/blueprints/custom/", read_only: true }
       - { type: "bind", source: "./config/authentik/web/dist/custom/", target: "/web/dist/custom/", read_only: true }
     environment: &authentik-environment
+      AUTHENTIK_DOMAIN: "${AUTHENTIK_DOMAIN:?}"
+      AUTHENTIK_WEB__BASE_URL: "https://${AUTHENTIK_DOMAIN:?}"
+      AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fd00::/8,::1/128"
       AUTHENTIK_BOOTSTRAP_EMAIL: "${AUTHENTIK_BOOTSTRAP_EMAIL:?}"
       AUTHENTIK_BOOTSTRAP_PASSWORD: "${AUTHENTIK_BOOTSTRAP_PASSWORD:?}"
       AUTHENTIK_BOOTSTRAP_TOKEN: "${AUTHENTIK_BOOTSTRAP_TOKEN:?}"
       AUTHENTIK_SECRET_KEY: "${AUTHENTIK_SECRET_KEY:?}"
+      AUTHENTIK_LDAP_OUTPOST_TOKEN: "${AUTHENTIK_LDAP_OUTPOST_TOKEN:?}"
       AUTHENTIK_EMAIL__HOST: "${AUTHENTIK_EMAIL_HOST:-}"
       AUTHENTIK_EMAIL__PORT: "${AUTHENTIK_EMAIL_PORT:-465}"
       AUTHENTIK_EMAIL__USERNAME: "${AUTHENTIK_EMAIL_USERNAME:-}"
@@ -199,10 +211,6 @@ services:
       AUTHENTIK_EMAIL__USE_TLS: "${AUTHENTIK_EMAIL_USE_TLS:-false}"
       AUTHENTIK_EMAIL__USE_SSL: "${AUTHENTIK_EMAIL_USE_SSL:-true}"
       AUTHENTIK_EMAIL__FROM: "${AUTHENTIK_EMAIL_FROM:-${AUTHENTIK_EMAIL_USERNAME:-}}"
-      AUTHENTIK_REDIS__HOST: "valkey-authentik"
-      AUTHENTIK_REDIS__PORT: "6379"
-      AUTHENTIK_REDIS__PASSWORD: "${VALKEY_AUTHENTIK_PASSWORD:?}"
-      AUTHENTIK_REDIS__DB: "1"
       AUTHENTIK_POSTGRESQL__HOST: "postgres"
       AUTHENTIK_POSTGRESQL__PORT: "5432"
       AUTHENTIK_POSTGRESQL__NAME: "authentik"
@@ -214,7 +222,7 @@ services:
       AUTHENTIK_AVATARS: "initials"
       GRIST_DOMAIN: "${GRIST_DOMAIN:?}"
       GRIST_OAUTH_CLIENT_SECRET: "${GRIST_OAUTH_CLIENT_SECRET:?}"
-      MINIO_DOMAIN: "${MINIO_DOMAIN:?}"
+      SILO_DOMAIN: "${SILO_DOMAIN:?}"
       GRAFANA_DOMAIN: "${GRAFANA_DOMAIN:?}"
       GRAFANA_OAUTH_CLIENT_SECRET: "${GRAFANA_OAUTH_CLIENT_SECRET:?}"
       PROMETHEUS_DOMAIN: "${PROMETHEUS_DOMAIN:?}"
@@ -234,15 +242,13 @@ services:
             'Connection: close' \
             '' >&3
           grep -Fq 'HTTP/1.1 200 OK' <&3
-      start_period: "300s"
+      start_period: "900s"
       start_interval: "5s"
       interval: "30s"
       timeout: "10s"
       retries: 2
     depends_on:
       postgres:
-        condition: "service_healthy"
-      valkey-authentik:
         condition: "service_healthy"
 
   authentik-worker:
@@ -265,36 +271,6 @@ services:
     depends_on:
       postgres:
         condition: "service_healthy"
-      valkey-authentik:
-        condition: "service_healthy"
-
-  authentik-proxy:
-    image: *authentik-proxy-image
-    restart: "always"
-    container_name: "docs-authentik-proxy"
-    hostname: "authentik-proxy"
-    networks:
-      - "private"
-    environment:
-      AUTHENTIK_HOST: "http://authentik-server:9000"
-      AUTHENTIK_HOST_BROWSER: "https://${AUTHENTIK_DOMAIN:?}"
-      AUTHENTIK_TOKEN: "${AUTHENTIK_BOOTSTRAP_TOKEN:?}"
-      AUTHENTIK_REDIS__HOST: "valkey-authentik"
-      AUTHENTIK_REDIS__PORT: "6379"
-      AUTHENTIK_REDIS__PASSWORD: "${VALKEY_AUTHENTIK_PASSWORD:?}"
-      AUTHENTIK_REDIS__DB: "1"
-    healthcheck:
-      test: ["CMD", "/proxy", "healthcheck"]
-      start_period: "300s"
-      start_interval: "5s"
-      interval: "30s"
-      timeout: "10s"
-      retries: 2
-    depends_on:
-      authentik-server:
-        condition: "service_healthy"
-      authentik-worker:
-        condition: "service_healthy"
 
   authentik-ldap:
     image: *authentik-ldap-image
@@ -305,11 +281,7 @@ services:
       - "private"
     environment:
       AUTHENTIK_HOST: "http://authentik-server:9000"
-      AUTHENTIK_TOKEN: "${AUTHENTIK_BOOTSTRAP_TOKEN:?}"
-      AUTHENTIK_REDIS__HOST: "valkey-authentik"
-      AUTHENTIK_REDIS__PORT: "6379"
-      AUTHENTIK_REDIS__PASSWORD: "${VALKEY_AUTHENTIK_PASSWORD:?}"
-      AUTHENTIK_REDIS__DB: "1"
+      AUTHENTIK_TOKEN: "${AUTHENTIK_LDAP_OUTPOST_TOKEN:?}"
     healthcheck:
       test: ["CMD", "/ldap", "healthcheck"]
       start_period: "300s"
@@ -323,23 +295,23 @@ services:
       authentik-worker:
         condition: "service_healthy"
 
-  minio:
-    image: *minio-image
+  silo:
+    image: *silo-image
     restart: "always"
-    container_name: "docs-minio"
-    hostname: "minio"
+    container_name: "docs-silo"
+    hostname: "silo"
     networks:
       - "private"
     volumes:
-      - { type: "volume", source: "minio-data", target: "/data/" }
+      - { type: "volume", source: "silo-data", target: "/data/" }
     environment:
-      MINIO_ROOT_USER: "minio"
-      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:?}"
+      MINIO_ROOT_USER: "silo"
+      MINIO_ROOT_PASSWORD: "${SILO_ROOT_PASSWORD:?}"
       MINIO_VOLUMES: "/data/"
       MINIO_BROWSER: "on"
-      MINIO_BROWSER_REDIRECT_URL: "https://${MINIO_DOMAIN:?}/console/"
+      MINIO_BROWSER_REDIRECT_URL: "https://${SILO_DOMAIN:?}/console/"
       MINIO_PROMETHEUS_URL: "http://prometheus:9090"
-      MINIO_PROMETHEUS_JOB_ID: "minio"
+      MINIO_PROMETHEUS_JOB_ID: "silo"
       MINIO_PROMETHEUS_AUTH_TYPE: "public"
     command: ["server", "--address", ":9000", "--console-address", ":9001"]
     healthcheck:
@@ -350,22 +322,22 @@ services:
       timeout: "10s"
       retries: 2
 
-  minio-init:
-    image: *minio-mc-image
+  silo-init:
+    image: *silo-mc-image
     restart: "on-failure"
-    container_name: "docs-minio-init"
-    hostname: "minio-init"
+    container_name: "docs-silo-init"
+    hostname: "silo-init"
     networks:
       - "private"
     volumes:
-      - { type: "bind", source: "./config/minio/init.sh", target: "/init.sh", read_only: true }
-      - { type: "bind", source: "./config/minio/policies/", target: "/policies/", read_only: true }
+      - { type: "bind", source: "./config/silo/init.sh", target: "/init.sh", read_only: true }
+      - { type: "bind", source: "./config/silo/policies/", target: "/policies/", read_only: true }
     environment:
-      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:?}"
-      MINIO_GRIST_PASSWORD: "${MINIO_GRIST_PASSWORD:?}"
+      SILO_ROOT_PASSWORD: "${SILO_ROOT_PASSWORD:?}"
+      SILO_GRIST_PASSWORD: "${SILO_GRIST_PASSWORD:?}"
     entrypoint: "/init.sh"
     depends_on:
-      minio:
+      silo:
         condition: "service_healthy"
 
   grafana:
@@ -411,6 +383,16 @@ services:
       GF_AUTH_GENERIC_OAUTH_ALLOW_ASSIGN_GRAFANA_ADMIN: "true"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_ANALYTICS_FEEDBACK_LINKS_ENABLED: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+      GF_SNAPSHOTS_EXTERNAL_ENABLED: "false"
+      GF_CLOUD_MIGRATION_ENABLED: "false"
+      GF_PLUGINS_PLUGIN_ADMIN_ENABLED: "false"
+      GF_PLUGINS_PUBLIC_KEY_RETRIEVAL_DISABLED: "true"
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+      GF_PLUGINS_DISABLE_PLUGINS: "grafana-llm-app,grafana-assistant-app"
+      GF_FEATURE_TOGGLES_grafanaAssistantInProfilesDrilldown: "false"
     healthcheck:
       test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:3000/api/health"]
       start_period: "120s"
@@ -455,7 +437,7 @@ services:
       - "private"
     volumes:
       - { type: "bind", source: "./config/postgres/initdb.d/", target: "/docker-entrypoint-initdb.d/", read_only: true }
-      - { type: "volume", source: "postgres-data", target: "/var/lib/postgresql/data/" }
+      - { type: "volume", source: "postgres-data", target: "/var/lib/postgresql/" }
     environment:
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "${POSTGRES_SUPERUSER_PASSWORD:?}"
@@ -490,27 +472,6 @@ services:
       timeout: "10s"
       retries: 2
 
-  valkey-authentik:
-    image: *valkey-image
-    restart: "always"
-    container_name: "docs-valkey-authentik"
-    hostname: "valkey-authentik"
-    networks:
-      - "private"
-    volumes:
-      - { type: "bind", source: "./config/valkey/valkey.conf.sh", target: "/etc/valkey/valkey.conf.sh", read_only: true }
-      - { type: "volume", source: "valkey-authentik-data", target: "/data/" }
-    environment:
-      REDISCLI_AUTH: "${VALKEY_AUTHENTIK_PASSWORD:?}"
-    command: ["sh", "-euc", "sh /etc/valkey/valkey.conf.sh | exec valkey-server -"]
-    healthcheck:
-      test: ["CMD-SHELL", "valkey-cli ping | grep -q PONG"]
-      start_period: "120s"
-      start_interval: "5s"
-      interval: "30s"
-      timeout: "10s"
-      retries: 2
-
 volumes:
 
   traefik-acme:
@@ -519,8 +480,8 @@ volumes:
   grist-data:
     name: "docs-grist-data"
 
-  minio-data:
-    name: "docs-minio-data"
+  silo-data:
+    name: "docs-silo-data"
 
   grafana-data:
     name: "docs-grafana-data"
@@ -533,9 +494,6 @@ volumes:
 
   valkey-grist-data:
     name: "docs-valkey-grist-data"
-
-  valkey-authentik-data:
-    name: "docs-valkey-authentik-data"
 
 networks:
 

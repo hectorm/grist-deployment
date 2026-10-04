@@ -42,17 +42,17 @@ http:
       service: "authentik"
       tls:
         certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
-    minio-s3:
-      rule: 'Host(`{{ env "MINIO_DOMAIN" }}`)'
+    silo-s3:
+      rule: 'Host(`{{ env "SILO_DOMAIN" }}`)'
       entryPoints: ["https"]
-      service: "minio-s3"
+      service: "silo-s3"
       tls:
         certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
-    minio-console:
-      rule: 'Host(`{{ env "MINIO_DOMAIN" }}`) && PathPrefix(`/console/`)'
+    silo-console:
+      rule: 'Host(`{{ env "SILO_DOMAIN" }}`) && (PathPrefix(`/console/`) || PathPrefix(`/outpost.goauthentik.io/`))'
       entryPoints: ["https"]
-      middlewares: ["compress", "strip-prefix", "forward-auth", "security-headers", "minio-console-security-headers"]
-      service: "minio-console"
+      middlewares: ["compress", "forward-auth", "strip-prefix", "security-headers", "silo-console-security-headers"]
+      service: "silo-console"
       tls:
         certResolver: '{{ env "TRAEFIK_TLS_RESOLVER" }}'
     grafana:
@@ -99,7 +99,7 @@ http:
         regex: ['\/[^\/]+']
     forward-auth:
       forwardAuth:
-        address: "http://authentik-proxy:9000/outpost.goauthentik.io/auth/traefik"
+        address: "http://authentik-server:9000/outpost.goauthentik.io/auth/traefik"
         trustForwardHeader: true
         authResponseHeaders:
           - "X-authentik-username"
@@ -127,33 +127,33 @@ http:
       headers:
         contentSecurityPolicy: >-
           default-src 'self';
-          script-src 'self' 'unsafe-inline' https://unpkg.com https://www.youtube.com;
-          style-src 'self' 'unsafe-inline' https://unpkg.com;
-          img-src 'self' blob: data: https://i.ytimg.com;
-          connect-src 'self' https://unpkg.com https://raw.githubusercontent.com;
+          script-src 'self' 'unsafe-inline' https://www.youtube.com;
+          style-src 'self' 'unsafe-inline';
+          img-src 'self' blob: data:;
+          connect-src 'self' https://raw.githubusercontent.com;
           frame-src 'self' https://gristlabs.github.io https://www.youtube.com;
     authentik-security-headers:
+      headers:
+        contentSecurityPolicy: >-
+          default-src 'self';
+          script-src 'self' 'unsafe-inline' 'unsafe-eval';
+          style-src 'self' 'unsafe-inline';
+          img-src 'self' blob: data:;
+    silo-console-security-headers:
       headers:
         contentSecurityPolicy: >-
           default-src 'self';
           script-src 'self' 'unsafe-inline';
           style-src 'self' 'unsafe-inline';
           img-src 'self' blob: data:;
-    minio-console-security-headers:
-      headers:
-        contentSecurityPolicy: >-
-          default-src 'self';
-          script-src 'self' 'unsafe-inline' https://unpkg.com;
-          style-src 'self' 'unsafe-inline' https://unpkg.com;
-          img-src 'self' blob: data:;
-          connect-src 'self' https://unpkg.com;
     grafana-security-headers:
       headers:
         contentSecurityPolicy: >-
           default-src 'self';
           script-src 'self' 'unsafe-inline' 'unsafe-eval';
           style-src 'self' 'unsafe-inline';
-          img-src 'self' blob: data: https://grafana.com;
+          img-src 'self' blob: data:;
+          worker-src 'self' blob:;
     prometheus-security-headers:
       headers:
         contentSecurityPolicy: >-
@@ -177,14 +177,14 @@ http:
       loadBalancer:
         servers:
           - url: "http://authentik-server:9000"
-    minio-s3:
+    silo-s3:
       loadBalancer:
         servers:
-          - url: "http://minio:9000"
-    minio-console:
+          - url: "http://silo:9000"
+    silo-console:
       loadBalancer:
         servers:
-          - url: "http://minio:9001"
+          - url: "http://silo:9001"
     grafana:
       loadBalancer:
         servers:

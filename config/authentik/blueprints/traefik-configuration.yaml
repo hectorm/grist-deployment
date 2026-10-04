@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://version-2023-4.goauthentik.io/blueprints/schema.json
+# yaml-language-server: $schema=https://version-2026-8.goauthentik.io/blueprints/schema.json
 version: 1
 metadata:
   name: "Traefik configuration"
@@ -12,11 +12,11 @@ entries:
       identifiers:
         name: "Default - Events Transport & Rules"
       required: true
-  # Apply "Default - Authentication flow" blueprint
+  # Apply "Authentication flow configuration" blueprint
   - model: "authentik_blueprints.metaapplyblueprint"
     attrs:
       identifiers:
-        name: "Default - Authentication flow"
+        name: "Authentication flow configuration"
       required: true
   # Apply "Default - Provider authorization flow (explicit consent)" blueprint
   - model: "authentik_blueprints.metaapplyblueprint"
@@ -49,19 +49,27 @@ entries:
     model: "authentik_providers_proxy.proxyprovider"
     attrs:
       name: "Traefik"
+      # yaml-language-server-disable Incorrect type
       authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      # yaml-language-server-disable Incorrect type
       authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-explicit-consent]]
+      # yaml-language-server-disable Incorrect type
       invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
       mode: "forward_single"
+      # yaml-language-server-disable Incorrect type
       external_host: !Format [https://%s, !Env TRAEFIK_DOMAIN]
       access_token_validity: "hours=24"
       refresh_token_validity: "days=30"
       intercept_header_auth: true
       internal_host_ssl_validation: true
       property_mappings:
+        # yaml-language-server-disable Incorrect type
         - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/proxy/scope-proxy]]
+        # yaml-language-server-disable Incorrect type
         - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+        # yaml-language-server-disable Incorrect type
         - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+        # yaml-language-server-disable Incorrect type
         - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
   # Traefik application
   - id: "traefik-application"
@@ -71,18 +79,24 @@ entries:
     attrs:
       name: "Traefik"
       slug: "traefik"
+      # yaml-language-server-disable Incorrect type
       provider: !KeyOf traefik-provider
       policy_engine_mode: "any"
       meta_publisher: "Traefik Labs"
+      # yaml-language-server-disable Incorrect type
       meta_launch_url: !Format [https://%s/dashboard/, !Env TRAEFIK_DOMAIN]
       icon: "/static/dist/custom/icons/traefik.svg"
   # Traefik application admin group policy binding
   - identifiers:
+      # yaml-language-server-disable Incorrect type
       target: !Find [authentik_core.application, [name, Traefik]]
+      # yaml-language-server-disable Incorrect type
       group: !Find [authentik_core.group, [name, authentik Admins]]
     model: "authentik_policies.policybinding"
     attrs:
+      # yaml-language-server-disable Incorrect type
       target: !Find [authentik_core.application, [name, Traefik]]
+      # yaml-language-server-disable Incorrect type
       group: !Find [authentik_core.group, [name, authentik Admins]]
       enabled: true
       order: 0

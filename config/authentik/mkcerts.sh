@@ -84,7 +84,7 @@ then
 
 	printf '%s\n' 'Generating CA certificate blueprint...'
 	cat > "${CA_CRT_BLUEPRINT:?}" <<-EOF
-		# yaml-language-server: \$schema=https://version-2024-8.goauthentik.io/blueprints/schema.json
+		# yaml-language-server: \$schema=https://version-2026-8.goauthentik.io/blueprints/schema.json
 		version: 1
 		metadata:
 		  name: "authentik CA certificate"
@@ -154,7 +154,7 @@ then
 
 	printf '%s\n' 'Generating JWT certificate blueprint...'
 	cat > "${JWT_CRT_BLUEPRINT:?}" <<-EOF
-		# yaml-language-server: \$schema=https://version-2024-8.goauthentik.io/blueprints/schema.json
+		# yaml-language-server: \$schema=https://version-2026-8.goauthentik.io/blueprints/schema.json
 		version: 1
 		metadata:
 		  name: "JWT certificate"

@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://version-2023-4.goauthentik.io/blueprints/schema.json
+# yaml-language-server: $schema=https://version-2026-8.goauthentik.io/blueprints/schema.json
 version: 1
 metadata:
   name: "LDAP configuration"
@@ -45,6 +45,7 @@ entries:
         goauthentik.io/user/service-account: true
         goauthentik.io/user/token-expires: false
       groups:
+        # yaml-language-server-disable Incorrect type
         - !Find [authentik_core.group, [name, ldap]]
   # LDAP service account app password
   # - id: "ldap-service-account-app-password"
@@ -68,6 +69,7 @@ entries:
         - "authentik.core.auth.InbuiltBackend"
         - "authentik.core.auth.TokenBackend"
         - "authentik.sources.ldap.auth.LDAPBackend"
+      # yaml-language-server-disable Incorrect type
       configure_flow: !Find [authentik_flows.flow, [slug, default-password-change]]
       failed_attempts_before_cancel: 5
   # LDAP authentication identification stage
@@ -134,6 +136,7 @@ entries:
     attrs:
       name: "LDAP"
       authorization_flow: !KeyOf ldap-authentication-flow
+      # yaml-language-server-disable Incorrect type
       invalidation_flow: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
       search_group: !KeyOf ldap-group
     # certificate: !Find [authentik_crypto.certificatekeypair, [name, LDAP certificate]]
@@ -151,5 +154,35 @@ entries:
     attrs:
       name: "LDAP"
       slug: "ldap"
+      # yaml-language-server-disable Incorrect type
       provider: !KeyOf ldap-provider
       policy_engine_mode: "any"
+  # LDAP outpost
+  - id: "ldap-outpost"
+    identifiers:
+      name: "LDAP"
+    model: "authentik_outposts.outpost"
+    attrs:
+      name: "LDAP"
+      type: "ldap"
+      # yaml-language-server-disable Incorrect type
+      service_connection: null
+      config:
+        authentik_host: !Format ["https://%s", !Env AUTHENTIK_DOMAIN]
+        authentik_host_insecure: false
+        authentik_host_browser: ""
+        refresh_interval: "minutes=1"
+      providers:
+        # yaml-language-server-disable Incorrect type
+        - !KeyOf ldap-provider
+  # LDAP outpost token
+  - identifiers:
+      # yaml-language-server-disable Incorrect type
+      identifier: !Format ["ak-outpost-%s-api", !KeyOf ldap-outpost]
+    model: "authentik_core.token"
+    attrs:
+      # yaml-language-server-disable Incorrect type
+      user: !Find [authentik_core.user, [path, "goauthentik.io/outposts"], [name, "Outpost LDAP Service-Account"]]
+      intent: "api"
+      expiring: false
+      key: !Env AUTHENTIK_LDAP_OUTPOST_TOKEN

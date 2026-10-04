@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://version-2024-8.goauthentik.io/blueprints/schema.json
+# yaml-language-server: $schema=https://version-2026-8.goauthentik.io/blueprints/schema.json
 version: 1
 metadata:
   name: "Branding"
@@ -13,12 +13,12 @@ entries:
       identifiers:
         name: "Default - Brand"
       required: true
-  # Apply "Default - Authentication flow" blueprint
+  # Apply "Authentication flow configuration" blueprint
   - model: "authentik_blueprints.metaapplyblueprint"
     identifiers: {}
     attrs:
       identifiers:
-        name: "Default - Authentication flow"
+        name: "Authentication flow configuration"
       required: true
   # Apply branding to default brand
   - id: "default-brand"
@@ -35,10 +35,3 @@ entries:
             applicationEdit: false
             apiDrawer: false
             search: false
-  # Apply branding to default authentication flow
-  - id: "default-authentication-flow"
-    identifiers:
-      slug: "default-authentication-flow"
-    model: "authentik_flows.flow"
-    attrs:
-      title: "Sign in to your account"

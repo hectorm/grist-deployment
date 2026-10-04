@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://version-2023-4.goauthentik.io/blueprints/schema.json
+# yaml-language-server: $schema=https://version-2026-8.goauthentik.io/blueprints/schema.json
 version: 1
 metadata:
   name: "Sample users"
@@ -25,6 +25,7 @@ entries:
       is_active: true
       path: "users"
       groups:
+        # yaml-language-server-disable Incorrect type
         - !Find [authentik_core.group, [name, person]]
   - id: "sample-user-bob"
     identifiers:
@@ -38,6 +39,7 @@ entries:
       is_active: true
       path: "users"
       groups:
+        # yaml-language-server-disable Incorrect type
         - !Find [authentik_core.group, [name, person]]
   - id: "sample-user-carol"
     identifiers:
@@ -51,6 +53,7 @@ entries:
       is_active: true
       path: "users"
       groups:
+        # yaml-language-server-disable Incorrect type
         - !Find [authentik_core.group, [name, person]]
   - id: "sample-user-dan"
     identifiers:
@@ -64,6 +67,7 @@ entries:
       is_active: true
       path: "users"
       groups:
+        # yaml-language-server-disable Incorrect type
         - !Find [authentik_core.group, [name, person]]
   - id: "sample-user-erin"
     identifiers:
@@ -77,6 +81,7 @@ entries:
       is_active: true
       path: "users"
       groups:
+        # yaml-language-server-disable Incorrect type
         - !Find [authentik_core.group, [name, person]]
   - id: "sample-user-frank"
     identifiers:
@@ -90,4 +95,5 @@ entries:
       is_active: true
       path: "users"
       groups:
+        # yaml-language-server-disable Incorrect type
         - !Find [authentik_core.group, [name, person]]

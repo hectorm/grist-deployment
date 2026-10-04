@@ -33,7 +33,7 @@ export LC_ALL='C'
 		'DNS:traefik.example.localhost' \
 		'DNS:grist.example.localhost' \
 		'DNS:idp.example.localhost' \
-		'DNS:minio.example.localhost' \
+		'DNS:silo.example.localhost' \
 		'DNS:grafana.example.localhost' \
 		'DNS:prometheus.example.localhost' \
 		'DNS:postgres.example.localhost' \

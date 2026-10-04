@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=https://version-2026-8.goauthentik.io/blueprints/schema.json
+version: 1
+metadata:
+  name: "Embedded outpost configuration"
+  labels:
+    blueprints.goauthentik.io/description: "Embedded outpost configuration"
+    blueprints.goauthentik.io/instantiate: "true"
+entries:
+  # Apply "Traefik configuration" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "Traefik configuration"
+      required: true
+  # Apply "Silo configuration" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "Silo configuration"
+      required: true
+  # Apply "Prometheus configuration" blueprint
+  - model: "authentik_blueprints.metaapplyblueprint"
+    attrs:
+      identifiers:
+        name: "Prometheus configuration"
+      required: true
+  # Assign the proxy providers to the embedded outpost
+  - model: "authentik_outposts.outpost"
+    identifiers:
+      managed: "goauthentik.io/outposts/embedded"
+    attrs:
+      config:
+        authentik_host: !Format ["https://%s", !Env AUTHENTIK_DOMAIN]
+        authentik_host_insecure: false
+        authentik_host_browser: ""
+        refresh_interval: "minutes=1"
+      providers:
+        # yaml-language-server-disable Incorrect type
+        - !Find [authentik_providers_proxy.proxyprovider, [name, "Traefik"]]
+        # yaml-language-server-disable Incorrect type
+        - !Find [authentik_providers_proxy.proxyprovider, [name, "Silo"]]
+        # yaml-language-server-disable Incorrect type
+        - !Find [authentik_providers_proxy.proxyprovider, [name, "Prometheus"]]
