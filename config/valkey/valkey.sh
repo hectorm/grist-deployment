@@ -9,5 +9,5 @@ exec valkey-server - <<-EOF
 	auto-aof-rewrite-min-size 16mb
 	auto-aof-rewrite-percentage 100
 	dir /data/
-	${REDISCLI_AUTH:+user default on ~* &* +@all -@admin >${REDISCLI_AUTH:?}}
+	${VALKEYCLI_AUTH:+user default on ~* &* +@all -@admin >${VALKEYCLI_AUTH:?}}
 EOF

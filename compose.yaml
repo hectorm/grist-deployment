@@ -462,7 +462,7 @@ services:
       - { type: "bind", source: "./config/valkey/valkey.sh", target: "/etc/valkey/valkey.sh", read_only: true }
       - { type: "volume", source: "valkey-grist-data", target: "/data/" }
     environment:
-      REDISCLI_AUTH: "${VALKEY_GRIST_PASSWORD:?}"
+      VALKEYCLI_AUTH: "${VALKEY_GRIST_PASSWORD:?}"
     command: ["sh", "/etc/valkey/valkey.sh"]
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep -q PONG"]
